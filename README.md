@@ -1,2 +1,2 @@
-# winterbourne
-Purely functional streamed computations in Java
+# Winterbourne
+Purely functional streaming computations in Java
