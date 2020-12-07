@@ -55,7 +55,7 @@
     </developers>
 
     <properties>
-        <lambda.version>5.2.0</lambda.version>
+        <lambda.version>5.3.0</lambda.version>
         <jmh.version>1.19</jmh.version>
         <maven-javadoc-plugin.version>3.0.1</maven-javadoc-plugin.version>
         <hamcrest.version>2.1</hamcrest.version>
