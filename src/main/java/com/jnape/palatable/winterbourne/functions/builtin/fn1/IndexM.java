@@ -6,8 +6,8 @@ import com.jnape.palatable.lambda.functions.Fn1;
 import com.jnape.palatable.lambda.functions.specialized.Pure;
 import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.lambda.monad.transformer.builtin.IterateT;
-import com.jnape.palatable.winterbourne.functions.builtin.fn2.ZipM;
 
+import static com.jnape.palatable.lambda.monad.transformer.builtin.IterateT.iterateT;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalNumbersM.naturalNumbersM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.ZipM.zipM;
 
@@ -17,7 +17,7 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn2.ZipM.zipM;
  * @param <A> the IterateT element type
  * @param <M> the IterateT effect type
  */
-public class IndexM<M extends MonadRec<?, M>, A> implements Fn1<IterateT<M, A>, IterateT<M, Tuple2<Integer, A>>> {
+public final class IndexM<M extends MonadRec<?, M>, A> implements Fn1<IterateT<M, A>, IterateT<M, Tuple2<Integer, A>>> {
 
     private static final IndexM<?, ?> INSTANCE = new IndexM<>();
 
@@ -27,7 +27,7 @@ public class IndexM<M extends MonadRec<?, M>, A> implements Fn1<IterateT<M, A>, 
     @Override
     public IterateT<M, Tuple2<Integer, A>> checkedApply(IterateT<M, A> as) throws Throwable {
         MonadRec<Maybe<Tuple2<A, IterateT<M, A>>>, M> unwrapped = as.runIterateT();
-        return ZipM.zipM(NaturalNumbersM.naturalNumbersM(Pure.of(unwrapped)), as);
+        return zipM(naturalNumbersM(Pure.of(unwrapped)), iterateT(unwrapped));
     }
 
     @SuppressWarnings("unchecked")
