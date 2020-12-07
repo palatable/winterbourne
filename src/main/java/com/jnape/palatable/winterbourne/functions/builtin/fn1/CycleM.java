@@ -1,20 +1,22 @@
 package com.jnape.palatable.winterbourne.functions.builtin.fn1;
 
+import com.jnape.palatable.lambda.adt.Maybe;
+import com.jnape.palatable.lambda.adt.hlist.Tuple2;
 import com.jnape.palatable.lambda.functions.Fn1;
-import com.jnape.palatable.lambda.monad.Monad;
 import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.lambda.monad.transformer.builtin.IterateT;
 
+import static com.jnape.palatable.lambda.monad.Monad.join;
+import static com.jnape.palatable.lambda.monad.transformer.builtin.IterateT.iterateT;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.RepeatM.repeatM;
 
 /**
- * Given an <code>IterateT</code>, return an infinite <code>IterateT</code> that repeatedly cycles its elements, in
- * order.
+ * Given an {@link IterateT}, return an infinite {@link IterateT} that repeatedly cycles its elements, in order.
  *
- * @param <A> The IterateT element type
- * @param <M> The IterateT effect type
+ * @param <A> The {@link IterateT} element type
+ * @param <M> The {@link IterateT} effect type
  */
-public class CycleM<M extends MonadRec<?, M>, A> implements Fn1<IterateT<M, A>, IterateT<M, A>> {
+public final class CycleM<M extends MonadRec<?, M>, A> implements Fn1<IterateT<M, A>, IterateT<M, A>> {
 
     private static final CycleM<?, ?> INSTANCE = new CycleM<>();
 
@@ -23,7 +25,8 @@ public class CycleM<M extends MonadRec<?, M>, A> implements Fn1<IterateT<M, A>, 
 
     @Override
     public IterateT<M, A> checkedApply(IterateT<M, A> as) throws Throwable {
-        return Monad.join(RepeatM.repeatM(as.runIterateT().pure(as)));
+        MonadRec<Maybe<Tuple2<A, IterateT<M, A>>>, M> headM = as.runIterateT();
+        return join(repeatM(headM.pure(iterateT(headM))));
     }
 
     @SuppressWarnings("unchecked")
