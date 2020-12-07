@@ -1,47 +1,49 @@
 package com.jnape.palatable.winterbourne.functions.builtin.fn2;
 
 import com.jnape.palatable.lambda.adt.Maybe;
-import com.jnape.palatable.lambda.adt.hlist.Tuple2;
 import com.jnape.palatable.lambda.functions.Fn1;
 import com.jnape.palatable.lambda.functions.Fn2;
+import com.jnape.palatable.lambda.monad.Monad;
 import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.lambda.monad.transformer.builtin.IterateT;
 
-import static com.jnape.palatable.lambda.adt.Maybe.nothing;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn1.HeadM.headM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.LastM.lastM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.DropM.dropM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
 
 /**
- * Retrieve the element of an {@link IterateT}, found at ordinal index <code>k</code> wrapped in an {@link Maybe} wrapped
- * in the monadic effect. If the index <code>k</code> is less than or equal to the size of the {@link IterateT}, the
- * result is {@link Maybe#nothing()} wrapped in the monadic effect.
+ * Retrieve the element effect of an {@link IterateT} at ordinal index <code>k</code>. If the <code>k</code> is less
+ * than or equal to the size of the {@link IterateT}, the result is a {@link Monad#pure(Object) pure} effect of
+ * {@link Maybe#nothing()}.
  *
- * @param <A> the IterateT element type
- * @param <M> the IterateT effect type
+ * @param <A> the {@link IterateT} element type
+ * @param <M> the {@link IterateT} effect type
  */
-public class NthM<M extends MonadRec<?, M>, A> implements Fn2<Integer, IterateT<M, A>, MonadRec<Maybe<A>, M>> {
+public class NthM<M extends MonadRec<?, M>, A, MMA extends MonadRec<Maybe<A>, M>>
+        implements Fn2<Integer, IterateT<M, A>, MMA> {
 
-    private static final NthM<?, ?> INSTANCE = new NthM<>();
+    private static final NthM<?, ?, ?> INSTANCE = new NthM<>();
 
     private NthM() {
     }
 
     @Override
-    public MonadRec<Maybe<A>, M> checkedApply(Integer k, IterateT<M, A> mas) throws Throwable {
-        MonadRec<Maybe<Tuple2<A, IterateT<M, A>>>, M> unwrapped = mas.runIterateT();
-        return k <= 0 ? unwrapped.pure(nothing()) : headM(DropM.dropM(k - 1, mas));
+    public MMA checkedApply(Integer k, IterateT<M, A> mas) throws Throwable {
+        return lastM(dropM(k - 1, takeM(k, mas)));
     }
 
     @SuppressWarnings("unchecked")
-    public static <M extends MonadRec<?, M>, A> NthM<M, A> nthM() {
-        return (NthM<M, A>) INSTANCE;
+    public static <M extends MonadRec<?, M>, A, MMA extends MonadRec<Maybe<A>, M>> NthM<M, A, MMA> nthM() {
+        return (NthM<M, A, MMA>) INSTANCE;
     }
 
-    public static <M extends MonadRec<?, M>, A> Fn1<IterateT<M, A>, MonadRec<Maybe<A>, M>> nthM(Integer k) {
-        return NthM.<M, A>nthM().apply(k);
+    public static <M extends MonadRec<?, M>, A, MMA extends MonadRec<Maybe<A>, M>> Fn1<IterateT<M, A>, MMA> nthM(
+            Integer k) {
+        return NthM.<M, A, MMA>nthM().apply(k);
     }
 
-    public static <M extends MonadRec<?, M>, A> MonadRec<Maybe<A>, M> nthM(Integer k, IterateT<M, A> mas) {
-        return NthM.<M, A>nthM(k).apply(mas);
+    public static <M extends MonadRec<?, M>, A, MMA extends MonadRec<Maybe<A>, M>> MMA nthM(Integer k,
+                                                                                            IterateT<M, A> mas) {
+        return NthM.<M, A, MMA>nthM(k).apply(mas);
     }
 }
