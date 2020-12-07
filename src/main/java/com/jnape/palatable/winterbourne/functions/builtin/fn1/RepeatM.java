@@ -8,7 +8,7 @@ import com.jnape.palatable.lambda.monad.transformer.builtin.IterateT;
 import static com.jnape.palatable.lambda.monad.transformer.builtin.IterateT.suspended;
 
 /**
- * Given a value in monadic effect, return an infinite <code>IterateT</code> that repeatedly runs the effect.
+ * Given a value in monadic effect, return an infinite {@link IterateT} that repeatedly runs the effect.
  *
  * @param <M> the {@link IterateT} effect type
  * @param <A> The {@link IterateT} element type
