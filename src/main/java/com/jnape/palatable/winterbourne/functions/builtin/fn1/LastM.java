@@ -19,7 +19,8 @@ import static com.jnape.palatable.lambda.monad.transformer.builtin.MaybeT.maybeT
  * @param <A> the IterateT element type
  * @param <M> the IterateT effect type
  */
-public class LastM<A, M extends MonadRec<?, M>, MMA extends MonadRec<Maybe<A>, M>> implements Fn1<IterateT<M, A>, MMA> {
+public final class LastM<A, M extends MonadRec<?, M>, MMA extends MonadRec<Maybe<A>, M>>
+        implements Fn1<IterateT<M, A>, MMA> {
 
     private static final LastM<?, ?, ?> INSTANCE = new LastM<>();
 
