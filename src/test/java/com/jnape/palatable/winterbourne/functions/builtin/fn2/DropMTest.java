@@ -1,51 +1,38 @@
 package com.jnape.palatable.winterbourne.functions.builtin.fn2;
 
-import com.jnape.palatable.lambda.adt.Maybe;
 import com.jnape.palatable.lambda.functor.builtin.Identity;
-import com.jnape.palatable.lambda.monad.transformer.builtin.IterateT;
 import org.junit.Test;
 
 import static com.jnape.palatable.lambda.adt.Maybe.just;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn1.HeadM.headM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn2.DropM.dropM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
 import static com.jnape.palatable.lambda.functor.builtin.Identity.pureIdentity;
 import static com.jnape.palatable.lambda.monad.transformer.builtin.IterateT.empty;
-import static org.junit.Assert.*;
-import static testsupport.Constants.STACK_EXPLODING_NUMBER;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.HeadM.headM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalNumbersM.naturalNumbersM;
-import static testsupport.matchers.IterateTMatcher.*;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn2.DropM.dropM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static testsupport.Constants.STACK_EXPLODING_NUMBER;
+import static testsupport.matchers.IterateTMatcher.isEmpty;
+import static testsupport.matchers.IterateTMatcher.iterates;
 
 public class DropMTest {
 
     @Test
     public void dropEmpty() {
-        IterateT<Identity<?>, Integer> numbers = empty(pureIdentity());
-        assertThat(dropM(5, numbers), isEmpty());
+        assertThat(dropM(5, empty(pureIdentity())), isEmpty());
     }
 
     @Test
-    public void dropAllShort() {
-        IterateT<Identity<?>, Integer> numbers = takeM(3, naturalNumbersM(pureIdentity()));
-        assertThat(dropM(5, numbers), isEmpty());
-    }
-
-    @Test
-    public void dropAll() {
-        IterateT<Identity<?>, Integer> numbers = takeM(5, naturalNumbersM(pureIdentity()));
-        assertThat(dropM(5, numbers), isEmpty());
-    }
-
-    @Test
-    public void dropSome() {
-        IterateT<Identity<?>, Integer> numbers = takeM(6, naturalNumbersM(pureIdentity()));
-        assertThat(dropM(5, numbers), iterates(6));
+    public void dropNonEmpty() {
+        assertThat(dropM(2, takeM(1, naturalNumbersM(pureIdentity()))), isEmpty());
+        assertThat(dropM(2, takeM(2, naturalNumbersM(pureIdentity()))), isEmpty());
+        assertThat(dropM(2, takeM(3, naturalNumbersM(pureIdentity()))), iterates(3));
     }
 
     @Test
     public void dropStackSafe() {
-        IterateT<Identity<?>, Integer> numbers = naturalNumbersM(pureIdentity());
-        Identity<Maybe<Integer>> actual = headM(dropM(STACK_EXPLODING_NUMBER, numbers));
-        assertEquals(just(STACK_EXPLODING_NUMBER + 1), actual.runIdentity());
+        assertEquals(new Identity<>(just(STACK_EXPLODING_NUMBER + 1)),
+                     headM(dropM(STACK_EXPLODING_NUMBER, naturalNumbersM(pureIdentity()))));
     }
 }
