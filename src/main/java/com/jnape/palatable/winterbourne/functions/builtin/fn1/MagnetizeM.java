@@ -11,8 +11,8 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn2.MagnetizeBy
 /**
  * {@link Magnetize} an {@link IterateT} using value equality as the magnetizing function.
  *
- * @param <A> the {@link IterateT} element type
  * @param <M> the {@link IterateT} effect type
+ * @param <A> the {@link IterateT} element type
  */
 public final class MagnetizeM<M extends MonadRec<?, M>, A> implements Fn1<IterateT<M, A>, IterateT<M, IterateT<M, A>>> {
 

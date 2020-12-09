@@ -11,7 +11,7 @@ import static com.jnape.palatable.lambda.monad.transformer.builtin.IterateT.empt
 import static com.jnape.palatable.lambda.semigroup.builtin.Max.max;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalNumbersM.naturalNumbersM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeWhileM.takeWhileM;
-import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static testsupport.Constants.STACK_EXPLODING_NUMBER;
 import static testsupport.matchers.IterateTMatcher.isEmpty;
@@ -46,8 +46,8 @@ public class TakeWhileMTest {
 
     @Test
     public void takeStackSafe() {
-        assertThat(takeWhileM(lte(STACK_EXPLODING_NUMBER), naturalNumbersM(pureIdentity()))
-                           .fold((a, i) -> new Identity<>(max(a, i)), new Identity<>(0)),
-                   equalTo(new Identity<>(STACK_EXPLODING_NUMBER)));
+        assertEquals(new Identity<>(STACK_EXPLODING_NUMBER),
+                     takeWhileM(lte(STACK_EXPLODING_NUMBER), naturalNumbersM(pureIdentity()))
+                             .fold((a, i) -> new Identity<>(max(a, i)), new Identity<>(0)));
     }
 }

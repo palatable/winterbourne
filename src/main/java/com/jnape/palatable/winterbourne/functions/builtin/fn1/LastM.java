@@ -16,10 +16,11 @@ import static com.jnape.palatable.lambda.monad.transformer.builtin.MaybeT.maybeT
  * Retrieve the last element of an {@link IterateT}, wrapped in a {@link Maybe}. If the {@link IterateT} is empty, the
  * result is {@link Maybe#nothing()}.
  *
- * @param <A> the IterateT element type
- * @param <M> the IterateT effect type
+ * @param <M>   the IterateT effect type
+ * @param <A>   the IterateT element type
+ * @param <MMA> the narrowed last result type
  */
-public final class LastM<A, M extends MonadRec<?, M>, MMA extends MonadRec<Maybe<A>, M>>
+public final class LastM<M extends MonadRec<?, M>, A, MMA extends MonadRec<Maybe<A>, M>>
         implements Fn1<IterateT<M, A>, MMA> {
 
     private static final LastM<?, ?, ?> INSTANCE = new LastM<>();
@@ -34,8 +35,8 @@ public final class LastM<A, M extends MonadRec<?, M>, MMA extends MonadRec<Maybe
     }
 
     @SuppressWarnings("unchecked")
-    public static <A, M extends MonadRec<?, M>, MMA extends MonadRec<Maybe<A>, M>> LastM<A, M, MMA> lastM() {
-        return (LastM<A, M, MMA>) INSTANCE;
+    public static <A, M extends MonadRec<?, M>, MMA extends MonadRec<Maybe<A>, M>> LastM<M, A, MMA> lastM() {
+        return (LastM<M, A, MMA>) INSTANCE;
     }
 
     public static <A, M extends MonadRec<?, M>, MMA extends MonadRec<Maybe<A>, M>> MMA lastM(IterateT<M, A> as) {

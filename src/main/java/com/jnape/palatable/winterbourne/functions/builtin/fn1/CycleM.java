@@ -13,8 +13,8 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn1.RepeatM.rep
 /**
  * Given an {@link IterateT}, return an infinite {@link IterateT} that repeatedly cycles its elements, in order.
  *
- * @param <A> The {@link IterateT} element type
  * @param <M> The {@link IterateT} effect type
+ * @param <A> The {@link IterateT} element type
  */
 public final class CycleM<M extends MonadRec<?, M>, A> implements Fn1<IterateT<M, A>, IterateT<M, A>> {
 

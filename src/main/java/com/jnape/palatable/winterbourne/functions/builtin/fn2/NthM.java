@@ -19,7 +19,7 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM
  * @param <A> the {@link IterateT} element type
  * @param <M> the {@link IterateT} effect type
  */
-public class NthM<M extends MonadRec<?, M>, A, MMA extends MonadRec<Maybe<A>, M>>
+public final class NthM<M extends MonadRec<?, M>, A, MMA extends MonadRec<Maybe<A>, M>>
         implements Fn2<Integer, IterateT<M, A>, MMA> {
 
     private static final NthM<?, ?, ?> INSTANCE = new NthM<>();

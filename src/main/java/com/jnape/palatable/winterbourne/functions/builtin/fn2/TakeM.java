@@ -18,12 +18,12 @@ import static com.jnape.palatable.lambda.monad.transformer.builtin.MaybeT.maybeT
  * iteration after the <code>nth</code> element, or the last element of the <code>IterateT</code>, whichever comes
  * first.
  *
- * @param <A> The IterateT element type
- * @param <M> the IterateT effect type
+ * @param <M> the {@link IterateT} effect type
+ * @param <A> The {@link IterateT} element type
  * @see TakeWhileM
  * @see DropM
  */
-public class TakeM<A, M extends MonadRec<?, M>> implements Fn2<Integer, IterateT<M, A>, IterateT<M, A>> {
+public final class TakeM<M extends MonadRec<?, M>, A> implements Fn2<Integer, IterateT<M, A>, IterateT<M, A>> {
 
     private static final TakeM<?, ?> INSTANCE = new TakeM<>();
 
@@ -39,15 +39,15 @@ public class TakeM<A, M extends MonadRec<?, M>> implements Fn2<Integer, IterateT
     }
 
     @SuppressWarnings("unchecked")
-    public static <A, M extends MonadRec<?, M>> TakeM<A, M> takeM() {
-        return (TakeM<A, M>) INSTANCE;
+    public static <M extends MonadRec<?, M>, A> TakeM<M, A> takeM() {
+        return (TakeM<M, A>) INSTANCE;
     }
 
-    public static <A, M extends MonadRec<?, M>> Fn1<IterateT<M, A>, IterateT<M, A>> takeM(Integer n) {
-        return TakeM.<A, M>takeM().apply(n);
+    public static <M extends MonadRec<?, M>, A> Fn1<IterateT<M, A>, IterateT<M, A>> takeM(Integer n) {
+        return TakeM.<M, A>takeM().apply(n);
     }
 
-    public static <A, M extends MonadRec<?, M>> IterateT<M, A> takeM(Integer n, IterateT<M, A> as) {
-        return TakeM.<A, M>takeM(n).apply(as);
+    public static <M extends MonadRec<?, M>, A> IterateT<M, A> takeM(Integer n, IterateT<M, A> as) {
+        return TakeM.<M, A>takeM(n).apply(as);
     }
 }

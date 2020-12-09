@@ -22,7 +22,8 @@ import static com.jnape.palatable.lambda.monad.transformer.builtin.IterateT.empt
 import static com.jnape.palatable.lambda.monad.transformer.builtin.IterateT.suspended;
 
 /**
- * Given a binary predicate and an <code>{@link IterateT}&lt;M, A&gt;</code>, return an <code>{@link IterateT}&lt;M, {@link
+ * Given a binary predicate and an <code>{@link IterateT}&lt;M, A&gt;</code>, return an <code>{@link IterateT}&lt;M,
+ * {@link
  * IterateT}&lt;M, A&gt;&gt;</code> of the contiguous groups of elements that match the predicate pairwise.
  * <p>
  * See <code>{@link MagnetizeBy}</code> for an example using <code>Iterable</code>
@@ -30,7 +31,8 @@ import static com.jnape.palatable.lambda.monad.transformer.builtin.IterateT.susp
  * @param <A> the {@link IterateT} element type
  * @param <M> the {@link IterateT} effect type
  */
-public class MagnetizeByM<M extends MonadRec<?, M>, A> implements Fn2<Fn2<? super A, ? super A, Boolean>, IterateT<M, A>, IterateT<M, IterateT<M, A>>> {
+public final class MagnetizeByM<M extends MonadRec<?, M>, A>
+        implements Fn2<Fn2<? super A, ? super A, Boolean>, IterateT<M, A>, IterateT<M, IterateT<M, A>>> {
 
     private static final MagnetizeByM<?, ?> INSTANCE = new MagnetizeByM<>();
 
@@ -49,7 +51,8 @@ public class MagnetizeByM<M extends MonadRec<?, M>, A> implements Fn2<Fn2<? supe
                                                  into((y, tail) ->
                                                               predicate.apply(pivot, y)
                                                               ? recurse(just(tuple(y, group.concat(mas.pure(y)), tail)))
-                                                              : terminate(just(tuple(group, mas.pure(y).concat(tail))))))))))
+                                                              : terminate(just(tuple(group, mas.pure(y)
+                                                                      .concat(tail))))))))))
                                  .fmap(m -> m.fmap(t -> t.fmap(magnetizeByM(predicate)))),
                          Pure.of(unwrappedA));
     }
@@ -59,11 +62,13 @@ public class MagnetizeByM<M extends MonadRec<?, M>, A> implements Fn2<Fn2<? supe
         return (MagnetizeByM<M, A>) INSTANCE;
     }
 
-    public static <M extends MonadRec<?, M>, A> Fn1<IterateT<M, A>, IterateT<M, IterateT<M, A>>> magnetizeByM(Fn2<? super A, ? super A, Boolean> predicate) {
+    public static <M extends MonadRec<?, M>, A> Fn1<IterateT<M, A>, IterateT<M, IterateT<M, A>>> magnetizeByM(
+            Fn2<? super A, ? super A, Boolean> predicate) {
         return MagnetizeByM.<M, A>magnetizeByM().apply(predicate);
     }
 
-    public static <M extends MonadRec<?, M>, A> IterateT<M, IterateT<M, A>> magnetizeByM(Fn2<? super A, ? super A, Boolean> predicate, IterateT<M, A> mas) {
+    public static <M extends MonadRec<?, M>, A> IterateT<M, IterateT<M, A>> magnetizeByM(
+            Fn2<? super A, ? super A, Boolean> predicate, IterateT<M, A> mas) {
         return MagnetizeByM.<M, A>magnetizeByM(predicate).apply(mas);
     }
 }

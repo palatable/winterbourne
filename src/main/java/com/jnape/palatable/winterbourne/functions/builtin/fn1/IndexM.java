@@ -14,8 +14,8 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn2.ZipM.zipM;
 /**
  * Given an <code>{@link IterateT}&lt;M, A&gt;</code>, pair each element with its ordinal index.
  *
- * @param <A> the IterateT element type
  * @param <M> the IterateT effect type
+ * @param <A> the IterateT element type
  */
 public final class IndexM<M extends MonadRec<?, M>, A> implements Fn1<IterateT<M, A>, IterateT<M, Tuple2<Integer, A>>> {
 

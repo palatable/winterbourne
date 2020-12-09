@@ -15,12 +15,14 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn3.ZipWithM.zi
  * the input <code>IterateT</code>s differ in size, the resulting <code>IterateT</code> contains only as many pairs as
  * the smallest input <code>IterateT</code>'s elements.
  *
- * @param <A> The first input IterateT element type, and the type of the first tuple slot in the output IterateT
- * @param <B> The second input IterateT element type, and the type of the second tuple slot in the output IterateT
- * @param <M> the IterateT effect type
+ * @param <M> the {@link IterateT} effect type
+ * @param <A> The first input {@link IterateT} element type, and the type of the first tuple slot in the output
+ *            {@link IterateT}
+ * @param <B> The second input {@link IterateT} element type, and the type of the second tuple slot in the output
+ *            {@link IterateT}
  * @see ZipWithM
  */
-public class ZipM<A, B, M extends MonadRec<?, M>> implements Fn2<IterateT<M, A>, IterateT<M, B>, IterateT<M, Tuple2<A, B>>> {
+public final class ZipM<M extends MonadRec<?, M>, A, B> implements Fn2<IterateT<M, A>, IterateT<M, B>, IterateT<M, Tuple2<A, B>>> {
 
     private static final ZipM<?, ?, ?> INSTANCE = new ZipM<>();
 
@@ -30,15 +32,17 @@ public class ZipM<A, B, M extends MonadRec<?, M>> implements Fn2<IterateT<M, A>,
     }
 
     @SuppressWarnings("unchecked")
-    public static <A, B, M extends MonadRec<?, M>> ZipM<A, B, M> zipM() {
-        return (ZipM<A, B, M>) INSTANCE;
+    public static <M extends MonadRec<?, M>, A, B> ZipM<M, A, B> zipM() {
+        return (ZipM<M, A, B>) INSTANCE;
     }
 
-    public static <A, B, M extends MonadRec<?, M>> Fn1<IterateT<M, B>, IterateT<M, Tuple2<A, B>>> zipM(IterateT<M, A> as) {
-        return ZipM.<A, B, M>zipM().apply(as);
+    public static <M extends MonadRec<?, M>, A, B> Fn1<IterateT<M, B>, IterateT<M, Tuple2<A, B>>> zipM(
+            IterateT<M, A> as) {
+        return ZipM.<M, A, B>zipM().apply(as);
     }
 
-    public static <A, B, M extends MonadRec<?, M>> IterateT<M, Tuple2<A, B>> zipM(IterateT<M, A> as, IterateT<M, B> bs) {
-        return ZipM.<A, B, M>zipM(as).apply(bs);
+    public static <M extends MonadRec<?, M>, A, B> IterateT<M, Tuple2<A, B>> zipM(IterateT<M, A> as,
+                                                                                  IterateT<M, B> bs) {
+        return ZipM.<M, A, B>zipM(as).apply(bs);
     }
 }

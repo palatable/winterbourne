@@ -13,7 +13,7 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn2.ReplicateM.
  * @param <M> the IterateT effect type
  * @param <A> The IterateT element type
  */
-public class EchoM<M extends MonadRec<?, M>, A> implements Fn2<Integer, IterateT<M, A>, IterateT<M, A>> {
+public final class EchoM<M extends MonadRec<?, M>, A> implements Fn2<Integer, IterateT<M, A>, IterateT<M, A>> {
 
     private static final EchoM<?, ?> INSTANCE = new EchoM<>();
 
@@ -34,7 +34,7 @@ public class EchoM<M extends MonadRec<?, M>, A> implements Fn2<Integer, IterateT
         return EchoM.<M, A>echoM().apply(n);
     }
 
-    public static <M extends MonadRec<?, M>, A> IterateT<M,A> echoM(Integer n, IterateT<M,A> mas) {
-        return EchoM.<M,A>echoM(n).apply(mas);
+    public static <M extends MonadRec<?, M>, A> IterateT<M, A> echoM(Integer n, IterateT<M, A> mas) {
+        return EchoM.<M, A>echoM(n).apply(mas);
     }
 }

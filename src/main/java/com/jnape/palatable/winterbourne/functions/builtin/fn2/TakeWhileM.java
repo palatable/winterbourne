@@ -16,13 +16,13 @@ import static com.jnape.palatable.lambda.monad.transformer.builtin.MaybeT.maybeT
  * Lazily limit the <code>IterateT</code> to the first group of contiguous elements that satisfy the predicate by
  * iterating up to, but not including, the first element for which the predicate evaluates to <code>false</code>.
  *
- * @param <A> The IterateT element type
- * @param <M> the IterateT effect type
+ * @param <M> the {@link IterateT} effect type
+ * @param <A> The {@link IterateT} element type
  * @see TakeM
  * @see FilterM
  * @see DropWhileM
  */
-public class TakeWhileM<A, M extends MonadRec<?, M>> implements
+public final class TakeWhileM<M extends MonadRec<?, M>, A> implements
         Fn2<Fn1<? super A, ? extends Boolean>, IterateT<M, A>, IterateT<M, A>> {
 
     private static final TakeWhileM<?, ?> INSTANCE = new TakeWhileM<>();
@@ -38,17 +38,17 @@ public class TakeWhileM<A, M extends MonadRec<?, M>> implements
     }
 
     @SuppressWarnings("unchecked")
-    public static <A, M extends MonadRec<?, M>> TakeWhileM<A, M> takeWhileM() {
-        return (TakeWhileM<A, M>) INSTANCE;
+    public static <M extends MonadRec<?, M>, A> TakeWhileM<M, A> takeWhileM() {
+        return (TakeWhileM<M, A>) INSTANCE;
     }
 
-    public static <A, M extends MonadRec<?, M>> Fn1<IterateT<M, A>, IterateT<M, A>> takeWhileM(
+    public static <M extends MonadRec<?, M>, A> Fn1<IterateT<M, A>, IterateT<M, A>> takeWhileM(
             Fn1<? super A, ? extends Boolean> predicate) {
-        return TakeWhileM.<A, M>takeWhileM().apply(predicate);
+        return TakeWhileM.<M, A>takeWhileM().apply(predicate);
     }
 
-    public static <A, M extends MonadRec<?, M>> IterateT<M, A> takeWhileM(Fn1<? super A, ? extends Boolean> predicate,
+    public static <M extends MonadRec<?, M>, A> IterateT<M, A> takeWhileM(Fn1<? super A, ? extends Boolean> predicate,
                                                                           IterateT<M, A> as) {
-        return TakeWhileM.<A, M>takeWhileM(predicate).apply(as);
+        return TakeWhileM.<M, A>takeWhileM(predicate).apply(as);
     }
 }

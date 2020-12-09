@@ -4,12 +4,12 @@ import com.jnape.palatable.lambda.functor.builtin.Identity;
 import com.jnape.palatable.lambda.monad.transformer.builtin.IterateT;
 import org.junit.Test;
 
+import static com.jnape.palatable.lambda.functor.builtin.Identity.pureIdentity;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalNumbersM.naturalNumbersM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.DropM.dropM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn3.ZipWithM.zipWithM;
-import static com.jnape.palatable.lambda.functor.builtin.Identity.pureIdentity;
-import static org.junit.Assert.*;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalNumbersM.naturalNumbersM;
+import static org.junit.Assert.assertThat;
 import static testsupport.matchers.IterateTMatcher.iterates;
 
 public class ZipWithMTest {

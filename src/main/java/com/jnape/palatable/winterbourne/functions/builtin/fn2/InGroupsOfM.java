@@ -7,11 +7,9 @@ import com.jnape.palatable.lambda.functions.Fn2;
 import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.lambda.monad.transformer.builtin.IterateT;
 
-import static com.jnape.palatable.winterbourne.functions.builtin.fn1.CycleM.cycleM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn2.EchoM.echoM;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.Eq.eq;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.CycleM.cycleM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.MagnetizeByM.magnetizeByM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn2.ZipM.zipM;
 
 /**
  * Lazily group the <code>IterateT</code> by returning an <code>IterateT</code> of smaller <code>IterateT</code>s of
@@ -22,7 +20,8 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn2.ZipM.zipM;
  * @param <A> The IterateT element type
  * @param <M> The IterateT effect type
  */
-public class InGroupsOfM<M extends MonadRec<?, M>, A> implements Fn2<Integer, IterateT<M, A>, IterateT<M, IterateT<M, A>>> {
+public final class InGroupsOfM<M extends MonadRec<?, M>, A>
+        implements Fn2<Integer, IterateT<M, A>, IterateT<M, IterateT<M, A>>> {
 
     private static final InGroupsOfM<?, ?> INSTANCE = new InGroupsOfM<>();
 
@@ -41,7 +40,8 @@ public class InGroupsOfM<M extends MonadRec<?, M>, A> implements Fn2<Integer, It
         return (InGroupsOfM<M, A>) INSTANCE;
     }
 
-    public static <M extends MonadRec<?, M>, A> Fn1<IterateT<M, A>, IterateT<M, IterateT<M, A>>> inGroupsOfM(Integer k) {
+    public static <M extends MonadRec<?, M>, A> Fn1<IterateT<M, A>, IterateT<M, IterateT<M, A>>> inGroupsOfM(
+            Integer k) {
         return InGroupsOfM.<M, A>inGroupsOfM().apply(k);
     }
 

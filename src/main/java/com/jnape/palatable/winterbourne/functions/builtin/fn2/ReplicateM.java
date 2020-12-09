@@ -15,7 +15,7 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM
  * @param <M> the output IterateT element type
  */
 
-public class ReplicateM<M extends MonadRec<?, M>, A> implements Fn2<Integer, MonadRec<A, M>, IterateT<M, A>> {
+public final class ReplicateM<M extends MonadRec<?, M>, A> implements Fn2<Integer, MonadRec<A, M>, IterateT<M, A>> {
 
     private static final ReplicateM<?, ?> INSTANCE = new ReplicateM<>();
 
