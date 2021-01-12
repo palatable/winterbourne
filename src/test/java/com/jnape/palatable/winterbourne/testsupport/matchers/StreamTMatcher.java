@@ -5,7 +5,6 @@ import com.jnape.palatable.lambda.functions.builtin.fn1.CatMaybes;
 import com.jnape.palatable.lambda.functions.specialized.Pure;
 import com.jnape.palatable.lambda.functor.builtin.Identity;
 import com.jnape.palatable.lambda.monad.MonadRec;
-import com.jnape.palatable.shoki.api.Collection;
 import com.jnape.palatable.shoki.impl.StrictQueue;
 import com.jnape.palatable.shoki.interop.Shoki;
 import com.jnape.palatable.winterbourne.StreamT;
@@ -15,7 +14,6 @@ import org.hamcrest.TypeSafeMatcher;
 
 import static com.jnape.palatable.lambda.functor.builtin.Identity.pureIdentity;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
-import static com.jnape.palatable.shoki.interop.Shoki.strictQueue;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 public final class StreamTMatcher<A, M extends MonadRec<?, M>> extends TypeSafeMatcher<StreamT<M, A>> {
@@ -87,19 +85,6 @@ public final class StreamTMatcher<A, M extends MonadRec<?, M>> extends TypeSafeM
                 matcher.describeMismatch(item, mismatchDescription);
             }
         });
-    }
-
-    public static <A> StreamTMatcher<A, Identity<?>> streamsAll(Collection<?, A> as) {
-        return whenEmissionsFolded(equalTo(new Identity<>(strictQueue(as))), pureIdentity());
-    }
-
-    public static <A> StreamTMatcher<A, Identity<?>> isEmpty() {
-        return streams();
-    }
-
-    @SafeVarargs
-    public static <A> StreamTMatcher<A, Identity<?>> streams(A... as) {
-        return streamsAll(strictQueue(as));
     }
 
     @SafeVarargs
