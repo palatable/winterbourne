@@ -165,31 +165,29 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
 
     public <B, MB extends MonadRec<B, M>> MB foldCut(
             Fn2<? super B, ? super Maybe<A>, ? extends MonadRec<RecursiveResult<B, B>, M>> fn,
-            MonadRec<B, M> acc) {
+            MB acc) {
         return foldCut0(fn, acc, this, StreamT::<MonadRec<Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>, M>>runStreamT);
     }
 
     public <B, MB extends MonadRec<B, M>> MB foldCutAwait(
             Fn2<? super B, ? super A, ? extends MonadRec<RecursiveResult<B, B>, M>> fn,
-            MonadRec<B, M> acc) {
+            MB acc) {
         return foldCut0(fn, acc, this, StreamT::<MonadRec<Maybe<Tuple2<A, StreamT<M, A>>>, M>>awaitStreamT);
     }
 
-    public <B, MB extends MonadRec<B, M>> MB fold(Fn2<? super B, ? super Maybe<A>, ? extends MonadRec<B, M>> fn,
-                                                  MonadRec<B, M> acc) {
+    public <B, MB extends MonadRec<B, M>> MB fold(Fn2<? super B, ? super Maybe<A>, MB> fn, MB acc) {
         return foldCut((b, maybeA) -> fn.apply(b, maybeA).fmap(RecursiveResult::recurse), acc);
     }
 
-    public <B, MB extends MonadRec<B, M>> MB foldAwait(Fn2<? super B, ? super A, ? extends MonadRec<B, M>> fn,
-                                                       MonadRec<B, M> acc) {
+    public <B, MB extends MonadRec<B, M>> MB foldAwait(Fn2<? super B, ? super A, MB> fn, MB acc) {
         return foldCutAwait((b, a) -> fn.apply(b, a).fmap(RecursiveResult::recurse), acc);
     }
 
-    public <MU extends MonadRec<Unit, M>> MU forEach(Fn1<? super Maybe<A>, ? extends MonadRec<Unit, M>> action) {
+    public <MU extends MonadRec<Unit, M>> MU forEach(Fn1<? super Maybe<A>, MU> action) {
         return fold((__, a) -> action.apply(a), pureM.apply(UNIT));
     }
 
-    public <MU extends MonadRec<Unit, M>> MU forEachAwait(Fn1<? super A, ? extends MonadRec<Unit, M>> action) {
+    public <MU extends MonadRec<Unit, M>> MU forEachAwait(Fn1<? super A, MU> action) {
         return foldAwait((__, a) -> action.apply(a), pureM.apply(UNIT));
     }
 
@@ -234,7 +232,7 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
     }
 
     private static <A, X, B, M extends MonadRec<?, M>, MB extends MonadRec<B, M>> MB foldCut0(
-            Fn2<? super B, ? super X, ? extends MonadRec<RecursiveResult<B, B>, M>> fn, MonadRec<B, M> acc,
+            Fn2<? super B, ? super X, ? extends MonadRec<RecursiveResult<B, B>, M>> fn, MB acc,
             StreamT<M, A> streamT,
             Fn1<? super StreamT<M, A>, ? extends MonadRec<Maybe<Tuple2<X, StreamT<M, A>>>, M>> advance) {
         return acc.fmap(tupler(streamT))

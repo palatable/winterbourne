@@ -72,9 +72,7 @@ public class StreamTTest {
     @TestTraits({FunctorLaws.class, ApplicativeLaws.class, MonadLaws.class, MonadRecLaws.class})
     public Subjects<Equivalence<StreamT<Identity<?>, ?>>> testSubject() {
         Fn1<? super StreamT<Identity<?>, ?>, Object> inTermsOfSkipsAndEmissions = streamT -> streamT
-                .<StrictQueue<Maybe<?>>, Identity<StrictQueue<Maybe<?>>>>fold(
-                        (as, maybeA) -> new Identity<>(as.snoc(maybeA)),
-                        new Identity<>(strictQueue()))
+                .fold((as, maybeA) -> new Identity<>(as.snoc(maybeA)), new Identity<>(strictQueue()))
                 .runIdentity();
         return subjects(equivalence(EXPLICITLY_EMPTY, inTermsOfSkipsAndEmissions),
                         equivalence(IMPLICITLY_EMPTY, inTermsOfSkipsAndEmissions),
@@ -282,13 +280,12 @@ public class StreamTTest {
                                                                listen(nothing()),
                                                                listen(just(2)),
                                                                listen(just(3)))
-                           .<Integer, Writer<String, Integer>>foldCut(
-                                   (x, maybeY) -> maybeY.match(
-                                           constantly(writer(tuple(recurse(x), "_"))),
-                                           y -> writer(tuple(y == 2 ? RecursiveResult.<Integer, Integer>terminate(x + y)
-                                                                    : RecursiveResult.<Integer, Integer>recurse(x + y),
-                                                             y.toString()))),
-                                   writer(tuple(0, "0"))),
+                           .foldCut((x, maybeY) -> maybeY.match(
+                                   constantly(writer(tuple(recurse(x), "_"))),
+                                   y -> writer(tuple(y == 2 ? RecursiveResult.<Integer, Integer>terminate(x + y)
+                                                            : RecursiveResult.<Integer, Integer>recurse(x + y),
+                                                     y.toString()))),
+                                    writer(tuple(0, "0"))),
                    whenRunWith(join(), equalTo(tuple(3, "01_2"))));
     }
 
@@ -298,9 +295,8 @@ public class StreamTTest {
                                                                listen(nothing()),
                                                                listen(just(2)),
                                                                listen(just(3)))
-                           .<Integer, Writer<String, Integer>>foldCutAwait(
-                                   (x, y) -> writer(tuple(y == 2 ? terminate(x + y) : recurse(x + y), y.toString())),
-                                   writer(tuple(0, "0"))),
+                           .foldCutAwait((x, y) -> writer(tuple(y == 2 ? terminate(x + y) : recurse(x + y), y.toString())),
+                                         writer(tuple(0, "0"))),
                    whenRunWith(join(), equalTo(tuple(3, "012"))));
     }
 
@@ -333,14 +329,14 @@ public class StreamTTest {
     @Test
     public void forEachOperatesOnSkippedAndEmittedValues() {
         assertThat(StreamT.<Writer<String, ?>, Integer>streamT(listen(just(1)), listen(nothing()), listen(just(2)))
-                           .<Writer<String, Unit>>forEach(maybeX -> tell(maybeX.fmap(Object::toString).orElse("_"))),
+                           .forEach(maybeX -> tell(maybeX.fmap(Object::toString).orElse("_"))),
                    whenExecutedWith(join(), equalTo("1_2")));
     }
 
     @Test
     public void forEachAwaitOperatesOnlyOnEmittedValues() {
         assertThat(StreamT.<Writer<String, ?>, Integer>streamT(listen(just(1)), listen(nothing()), listen(just(2)))
-                           .<Writer<String, Unit>>forEachAwait(x -> tell(x.toString())),
+                           .forEachAwait(x -> tell(x.toString())),
                    whenExecutedWith(join(), equalTo("12")));
     }
 
