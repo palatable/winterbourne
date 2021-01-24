@@ -69,6 +69,11 @@
             <version>${lambda.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.jnape.palatable</groupId>
+            <artifactId>shoki</artifactId>
+            <version>1.0-alpha-2</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
