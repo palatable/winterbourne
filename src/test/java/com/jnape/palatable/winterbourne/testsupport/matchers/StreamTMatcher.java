@@ -91,4 +91,9 @@ public final class StreamTMatcher<A, M extends MonadRec<?, M>> extends TypeSafeM
     public static <A> StreamTMatcher<A, Identity<?>> streams(Maybe<A>... as) {
         return whenFolded(equalTo(new Identity<>(strictQueue(as))), pureIdentity());
     }
+
+    @SafeVarargs
+    public static <A> StreamTMatcher<A, Identity<?>> emits(A... as) {
+        return whenEmissionsFolded(equalTo(new Identity<>(strictQueue(as))), pureIdentity());
+    }
 }
