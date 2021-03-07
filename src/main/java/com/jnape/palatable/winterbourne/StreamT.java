@@ -131,16 +131,18 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
 
     @Override
     public <B> StreamT<M, B> flatMap(Fn1<? super A, ? extends Monad<B, StreamT<M, ?>>> f) {
-        return streamT(
-                () -> runStreamT().trampolineM(maybeSpine -> maybeSpine.match(
-                        fn0(() -> pureM.apply(RecursiveResult.<Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>, Maybe<Tuple2<Maybe<B>, StreamT<M, B>>>>terminate(nothing()))),
-                        into((maybeA, as) -> maybeA.match(
-                                fn0(() -> pureM.apply(RecursiveResult.<Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>, Maybe<Tuple2<Maybe<B>, StreamT<M, B>>>>terminate(just(tuple(nothing(), as.flatMap(f)))))),
-                                a -> f.apply(a).<StreamT<M, B>>coerce().runStreamT()
-                                        .flatMap(maybeNext -> maybeNext.match(
-                                                fn0(() -> as.runStreamT().fmap(RecursiveResult::recurse)),
-                                                bSpine -> pureM.apply(terminate(just(bSpine.fmap(bs_ -> bs_.concat(as.flatMap(f)))))))))))),
-                pureM);
+        return streamT(() -> runStreamT().flatMap(maybeMore -> maybeMore.match(
+                __ -> pureM.apply(nothing()),
+                into((maybeA, rest) -> {
+                    StreamT<M, B> tailBs = rest.flatMap(f);
+                    return maybeA.match(
+                            __ -> pureM.apply(just(tuple(nothing(), tailBs))),
+                            a -> f.apply(a).<StreamT<M, B>>coerce()
+                                    .runStreamT()
+                                    .fmap(m -> just(m.fmap(t -> t.fmap(bs -> bs.concat(tailBs)))
+                                                            .orElseGet(() -> tuple(nothing(), tailBs))))
+                    );
+                }))), pureM);
     }
 
     @Override

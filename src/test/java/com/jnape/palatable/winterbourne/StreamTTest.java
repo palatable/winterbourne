@@ -12,6 +12,7 @@ import com.jnape.palatable.lambda.functor.builtin.Writer;
 import com.jnape.palatable.lambda.io.IO;
 import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.shoki.impl.StrictQueue;
+import com.jnape.palatable.shoki.interop.Shoki;
 import com.jnape.palatable.traitor.annotations.TestTraits;
 import com.jnape.palatable.traitor.framework.Subjects;
 import com.jnape.palatable.traitor.runners.Traits;
@@ -35,6 +36,7 @@ import static com.jnape.palatable.lambda.adt.Unit.UNIT;
 import static com.jnape.palatable.lambda.adt.hlist.HList.tuple;
 import static com.jnape.palatable.lambda.functions.builtin.fn1.Constantly.constantly;
 import static com.jnape.palatable.lambda.functions.builtin.fn1.Id.id;
+import static com.jnape.palatable.lambda.functions.builtin.fn2.Replicate.replicate;
 import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.recurse;
 import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.terminate;
 import static com.jnape.palatable.lambda.functor.builtin.Identity.pureIdentity;
@@ -155,7 +157,7 @@ public class StreamTTest {
                    streams(just(1), nothing(), just(2), nothing(), just(3), nothing(), just(2), nothing(), just(3)));
         assertThat(streamT(new Identity<>(strictQueue(just(1), nothing(), just(2))))
                            .trampolineM(x -> empty(pureIdentity())),
-                   streams(nothing()));
+                   streams(nothing(), nothing(), nothing()));
         assertThat(empty(pureIdentity()).trampolineM(x -> streamT(new Identity<>(just(terminate(x))))),
                    streams());
         assertThat(streamT(new Identity<>(strictQueue(just(1), nothing(), just(2))))
@@ -282,7 +284,7 @@ public class StreamTTest {
                                                                listen(nothing()),
                                                                listen(just(2)),
                                                                listen(just(3)))
-                           .<Integer, Writer<String, Integer>>foldCut(
+                           .foldCut(
                                    (x, maybeY) -> maybeY.match(
                                            constantly(writer(tuple(recurse(x), "_"))),
                                            y -> writer(tuple(y == 2 ? RecursiveResult.<Integer, Integer>terminate(x + y)
@@ -298,7 +300,7 @@ public class StreamTTest {
                                                                listen(nothing()),
                                                                listen(just(2)),
                                                                listen(just(3)))
-                           .<Integer, Writer<String, Integer>>foldCutAwait(
+                           .foldCutAwait(
                                    (x, y) -> writer(tuple(y == 2 ? terminate(x + y) : recurse(x + y), y.toString())),
                                    writer(tuple(0, "0"))),
                    whenRunWith(join(), equalTo(tuple(3, "012"))));
@@ -333,14 +335,14 @@ public class StreamTTest {
     @Test
     public void forEachOperatesOnSkippedAndEmittedValues() {
         assertThat(StreamT.<Writer<String, ?>, Integer>streamT(listen(just(1)), listen(nothing()), listen(just(2)))
-                           .<Writer<String, Unit>>forEach(maybeX -> tell(maybeX.fmap(Object::toString).orElse("_"))),
+                           .forEach(maybeX -> tell(maybeX.fmap(Object::toString).orElse("_"))),
                    whenExecutedWith(join(), equalTo("1_2")));
     }
 
     @Test
     public void forEachAwaitOperatesOnlyOnEmittedValues() {
         assertThat(StreamT.<Writer<String, ?>, Integer>streamT(listen(just(1)), listen(nothing()), listen(just(2)))
-                           .<Writer<String, Unit>>forEachAwait(x -> tell(x.toString())),
+                           .forEachAwait(x -> tell(x.toString())),
                    whenExecutedWith(join(), equalTo("12")));
     }
 
@@ -395,14 +397,16 @@ public class StreamTTest {
             return just(2);
         }));
 
-        assertThat(pin(foo.zip(bar.fmap(y -> x -> tuple(x, y))).fold((as, maybeA) -> io(as.snoc(maybeA)), io(strictQueue())),
+        assertThat(pin(foo.zip(bar.fmap(y -> x -> tuple(x, y)))
+                               .fold((as, maybeA) -> io(as.snoc(maybeA)), io(strictQueue())),
                        Executors.newFixedThreadPool(2)),
                    yieldsValue(equalTo(strictQueue(just(tuple(1, 2))))));
     }
 
     @Test
     public void flatMapToEmptyStackSafety() {
-        assertEquals(new Identity<>(UNIT), unfold(x -> new Identity<>(x <= STACK_EXPLODING_NUMBER ? just(tuple(just(x), x + 1)) : nothing()), new Identity<>(1))
+        assertEquals(new Identity<>(UNIT), unfold(x -> new Identity<>(
+                x <= STACK_EXPLODING_NUMBER ? just(tuple(just(x), x + 1)) : nothing()), new Identity<>(1))
                 .flatMap(constantly(empty(pureIdentity())))
                 .forEach(constantly(new Identity<>(UNIT))));
 
@@ -410,7 +414,7 @@ public class StreamTTest {
                           Writer.<Integer, Integer>listen(1))
                            .flatMap(x -> streamT(() -> writer(tuple(nothing(), x)), pureWriter())),
                    whenFolded(whenRunWith(monoid(Integer::sum, 0), equalTo(tuple(
-                           strictQueue(),
+                           Shoki.strictQueue(replicate(STACK_EXPLODING_NUMBER, nothing())),
                            1250025000
                    ))), pureWriter()));
     }
