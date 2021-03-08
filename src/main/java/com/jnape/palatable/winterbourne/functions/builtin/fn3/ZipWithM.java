@@ -10,13 +10,15 @@ import com.jnape.palatable.lambda.functions.specialized.Pure;
 import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.winterbourne.StreamT;
 
+import java.util.Map.Entry;
+
 import static com.jnape.palatable.lambda.adt.Maybe.just;
 import static com.jnape.palatable.lambda.adt.Maybe.nothing;
 import static com.jnape.palatable.lambda.adt.Unit.UNIT;
 import static com.jnape.palatable.lambda.adt.hlist.HList.tuple;
-import static com.jnape.palatable.lambda.functions.Fn0.fn0;
-import static com.jnape.palatable.lambda.functions.Fn2.fn2;
+import static com.jnape.palatable.lambda.functions.Fn2.curried;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.$.$;
+import static com.jnape.palatable.lambda.functions.builtin.fn2.Into.into;
 import static com.jnape.palatable.lambda.monad.transformer.builtin.MaybeT.maybeT;
 import static com.jnape.palatable.winterbourne.StreamT.streamT;
 
@@ -40,11 +42,16 @@ public final class ZipWithM<M extends MonadRec<?, M>, A, B, C>
     @Override
     public StreamT<M, C> checkedApply(Fn2<? super A, ? super B, ? extends C> fn, StreamT<M, A> as, StreamT<M, B> bs) {
         MonadRec<Maybe<Tuple2<Maybe<Unit>, StreamT<M, Unit>>>, M> mUnit = as.pure(UNIT).runStreamT();
-        return streamT(() -> maybeT(bs.runStreamT()).zip(maybeT(as.runStreamT()).<Fn1<? super Tuple2<Maybe<B>, StreamT<M, B>>, ? extends Tuple2<Maybe<C>, StreamT<M, C>>>>fmap(
-                fn2((ta, tb) -> ta._1().match(
-                        fn0(() -> tuple(nothing(), zipWithM(fn, ta._2(), tb._2().cons(mUnit.pure(tb._1()))))),
-                        a -> tb._1().match(fn0(() -> tuple(nothing(), zipWithM(fn, ta._2().cons(mUnit.pure(just(a))), tb._2()))),
-                                           b -> tuple(just(fn.apply(a, b)), zipWithM(fn, ta._2(), tb._2()))))))).runMaybeT(),
+
+        Fn2<Entry<Maybe<A>, StreamT<M, A>>, Entry<Maybe<B>, StreamT<M, B>>, Tuple2<Maybe<C>, StreamT<M, C>>> zipper =
+                curried(into((maybeA, as_) -> into((maybeB, bs_) -> maybeA.match(
+                        __ -> tuple(Maybe.<C>nothing(), tuple(as_, bs_.cons(mUnit.pure(maybeB)))),
+                        a -> maybeB.<Tuple2<Maybe<C>, Tuple2<StreamT<M, A>, StreamT<M, B>>>>match(
+                                __ -> tuple(nothing(), tuple(as_.cons(mUnit.pure(just(a))), bs_)),
+                                b -> tuple(just(fn.apply(a, b)), tuple(as_, bs_))))
+                        .fmap(into(zipWithM(fn))))));
+
+        return streamT(() -> maybeT(as.runStreamT()).zip(maybeT(bs.runStreamT()).fmap(zipper.flip())).runMaybeT(),
                        Pure.of(mUnit));
     }
 

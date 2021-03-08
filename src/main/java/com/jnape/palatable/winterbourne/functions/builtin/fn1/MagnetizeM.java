@@ -3,6 +3,7 @@ package com.jnape.palatable.winterbourne.functions.builtin.fn1;
 import com.jnape.palatable.lambda.functions.Fn1;
 import com.jnape.palatable.lambda.functions.builtin.fn1.Magnetize;
 import com.jnape.palatable.lambda.monad.MonadRec;
+import com.jnape.palatable.shoki.impl.StrictQueue;
 import com.jnape.palatable.winterbourne.StreamT;
 
 import static com.jnape.palatable.lambda.functions.builtin.fn2.$.$;
@@ -13,9 +14,9 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn2.MagnetizeBy
  * {@link Magnetize} a <code>{@link StreamT}&lt;M, A&gt;</code> using value equality as the magnetizing function.
  *
  * @param <M> the {@link StreamT} effect type
- * @param <A> the {@link StreamT} element type
+ * @param <A> the {@link StrictQueue} element type
  */
-public final class MagnetizeM<M extends MonadRec<?, M>, A> implements Fn1<StreamT<M, A>, StreamT<M, StreamT<M, A>>> {
+public final class MagnetizeM<M extends MonadRec<?, M>, A> implements Fn1<StreamT<M, A>, StreamT<M, StrictQueue<A>>> {
 
     private static final MagnetizeM<?, ?> INSTANCE = new MagnetizeM<>();
 
@@ -23,7 +24,7 @@ public final class MagnetizeM<M extends MonadRec<?, M>, A> implements Fn1<Stream
     }
 
     @Override
-    public StreamT<M, StreamT<M, A>> checkedApply(StreamT<M, A> mas) throws Throwable {
+    public StreamT<M, StrictQueue<A>> checkedApply(StreamT<M, A> mas) throws Throwable {
         return magnetizeByM(eq(), mas);
     }
 
@@ -32,7 +33,7 @@ public final class MagnetizeM<M extends MonadRec<?, M>, A> implements Fn1<Stream
         return (MagnetizeM<M, A>) INSTANCE;
     }
 
-    public static <M extends MonadRec<?, M>, A> StreamT<M, StreamT<M, A>> magnetizeM(StreamT<M, A> as) {
+    public static <M extends MonadRec<?, M>, A> StreamT<M, StrictQueue<A>> magnetizeM(StreamT<M, A> as) {
         return $(magnetizeM(), as);
     }
 }

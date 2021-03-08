@@ -1,18 +1,14 @@
 package com.jnape.palatable.winterbourne.functions.builtin.fn2;
 
-import com.jnape.palatable.lambda.adt.Maybe;
-import com.jnape.palatable.lambda.adt.Unit;
-import com.jnape.palatable.lambda.adt.hlist.Tuple2;
 import com.jnape.palatable.lambda.functions.Fn1;
 import com.jnape.palatable.lambda.functions.Fn2;
-import com.jnape.palatable.lambda.functions.specialized.Pure;
 import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.winterbourne.StreamT;
 
+import static com.jnape.palatable.lambda.adt.Maybe.just;
 import static com.jnape.palatable.lambda.adt.Maybe.nothing;
 import static com.jnape.palatable.lambda.adt.Unit.UNIT;
 import static com.jnape.palatable.lambda.adt.hlist.HList.tuple;
-import static com.jnape.palatable.lambda.functions.builtin.fn1.Constantly.constantly;
 import static com.jnape.palatable.lambda.functions.builtin.fn1.Not.not;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.$.$;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.Into.into;
@@ -36,14 +32,11 @@ public final class DropWhileM<M extends MonadRec<?, M>, A>
 
     @Override
     public StreamT<M, A> checkedApply(Fn1<? super A, Boolean> predicate, StreamT<M, A> as) {
-        MonadRec<Maybe<Tuple2<Maybe<Unit>, StreamT<M, Unit>>>, M> mUnit = as.pure(UNIT).runStreamT();
-        return streamT(
-                () -> as.runStreamT().fmap(m -> m.fmap(into(
-                        (mHead, tail) -> mHead
-                                .filter(not(predicate))
-                                .match(constantly(tuple(nothing(), dropWhileM(predicate, tail))),
-                                       constantly(tuple(mHead, tail)))))),
-                Pure.of(mUnit));
+        return streamT(() -> as.runStreamT().fmap(m -> m.fmap(into((mHead, tail) -> mHead
+                               .filter(not(predicate))
+                               .match(__ -> tuple(nothing(), dropWhileM(predicate, tail)),
+                                      a -> tuple(just(a), tail))))),
+                       as.pure(UNIT).runStreamT()::pure);
     }
 
     @SuppressWarnings("unchecked")

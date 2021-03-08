@@ -1,36 +1,50 @@
 package com.jnape.palatable.winterbourne.functions.builtin.fn1;
 
 import com.jnape.palatable.lambda.adt.Maybe;
+import com.jnape.palatable.lambda.adt.Unit;
 import com.jnape.palatable.lambda.adt.hlist.Tuple2;
 import com.jnape.palatable.lambda.functor.builtin.Identity;
-import com.jnape.palatable.lambda.io.IO;
+import com.jnape.palatable.lambda.functor.builtin.Writer;
 import com.jnape.palatable.shoki.api.Natural;
+import com.jnape.palatable.shoki.impl.StrictQueue;
+import com.jnape.palatable.winterbourne.StreamT;
 import org.junit.Test;
 
 import static com.jnape.palatable.lambda.adt.Maybe.nothing;
-import static com.jnape.palatable.lambda.functions.builtin.fn2.Eq.eq;
+import static com.jnape.palatable.lambda.adt.hlist.HList.tuple;
+import static com.jnape.palatable.lambda.functions.Fn2.curried;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.Into.into;
+import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.recurse;
+import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.terminate;
 import static com.jnape.palatable.lambda.functor.builtin.Identity.pureIdentity;
-import static com.jnape.palatable.lambda.io.IO.io;
-import static com.jnape.palatable.lambda.io.IO.pureIO;
-import static com.jnape.palatable.shoki.api.Natural.*;
+import static com.jnape.palatable.lambda.monoid.Monoid.monoid;
+import static com.jnape.palatable.shoki.api.Natural.atLeastOne;
+import static com.jnape.palatable.shoki.api.Natural.natural;
+import static com.jnape.palatable.shoki.api.Natural.one;
+import static com.jnape.palatable.shoki.api.Natural.zero;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.CycleM.cycleM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalsM.naturalsM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn2.DropM.dropM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn2.FindM.findM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn2.ZipM.zipM;
+import static com.jnape.palatable.winterbourne.testsupport.functions.ImpureNaturals.writerNaturals;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.streams;
-import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.whenEmissionsFolded;
+import static com.jnape.palatable.winterbourne.testsupport.matchers.WriterMatcher.whenExecutedWith;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static testsupport.Constants.STACK_EXPLODING_NUMBER;
-import static com.jnape.palatable.winterbourne.testsupport.functions.ImpureNaturals.impureNaturals;
-import static testsupport.matchers.IOMatcher.yieldsValue;
-import static testsupport.matchers.IterableMatcher.iterates;
 
 public class CycleMTest {
+
+    @Test
+    public void cyclesEmpty() {
+        assertEquals(new Identity<>(strictQueue(nothing(), nothing(), nothing())),
+                     cycleM(StreamT.<Identity<?>, Unit>empty(pureIdentity()))
+                             .foldCut(curried(into((i, xs) -> x -> new Identity<>(i == 3
+                                                                                  ? terminate(tuple(i, xs))
+                                                                                  : recurse(tuple(i + 1, xs.snoc(x)))))),
+                                      new Identity<>(tuple(0, StrictQueue.<Maybe<Unit>>strictQueue())))
+                             .fmap(Tuple2::_2));
+    }
 
     @Test
     public void cyclesTheSameSequence() {
@@ -41,31 +55,10 @@ public class CycleMTest {
     }
 
     @Test
-    public void cyclesTheSameSequenceForever() {
-        assertThat(takeM(atLeastOne(9), dropM(atLeastOne(STACK_EXPLODING_NUMBER - STACK_EXPLODING_NUMBER % 3),
-                                              cycleM(takeM(atLeastOne(3), naturalsM(pureIdentity()))))),
-                   whenEmissionsFolded(equalTo(new Identity<>(
-                                               strictQueue(atLeastZero(0), atLeastZero(1), atLeastZero(2),
-                                                           atLeastZero(0), atLeastZero(1), atLeastZero(2),
-                                                           atLeastZero(0), atLeastZero(1), atLeastZero(2)))),
-                                       pureIdentity()));
-    }
-
-    @Test
-    public void infinityInfinities() {
-        IO<Maybe<Tuple2<Natural, Natural>>> actual =
-                findM(into((i, j) -> !eq(i, j)),
-                      takeM(atLeastOne(STACK_EXPLODING_NUMBER),
-                            zipM(naturalsM(pureIO()),
-                                 cycleM(naturalsM(pureIO())))));
-        assertThat(actual, yieldsValue(equalTo(nothing())));
-    }
-
-    @Test
     public void rerunsTheEffects() {
-        assertThat(takeM(atLeastOne(10), cycleM(takeM(atLeastOne(2), impureNaturals())))
-                           .foldAwait((ns, n) -> io(ns.snoc(n)), io(strictQueue())),
-                   yieldsValue(iterates(abs(0), abs(1), abs(2), abs(3), abs(4),
-                                        abs(5), abs(6), abs(7), abs(8), abs(9))));
+        assertThat(takeM(atLeastOne(4), cycleM(takeM(atLeastOne(2), writerNaturals())))
+                           .<Writer<StrictQueue<Natural>, Unit>>awaitAll(),
+                   whenExecutedWith(monoid(StrictQueue::snocAll, strictQueue()),
+                                    equalTo(strictQueue(zero(), one(), zero(), one()))));
     }
 }

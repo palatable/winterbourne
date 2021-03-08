@@ -1,11 +1,7 @@
 package com.jnape.palatable.winterbourne.functions.builtin.fn2;
 
-import com.jnape.palatable.lambda.adt.Maybe;
-import com.jnape.palatable.lambda.adt.Unit;
-import com.jnape.palatable.lambda.adt.hlist.Tuple2;
 import com.jnape.palatable.lambda.functions.Fn1;
 import com.jnape.palatable.lambda.functions.Fn2;
-import com.jnape.palatable.lambda.functions.specialized.Pure;
 import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.shoki.api.Natural.NonZero;
 import com.jnape.palatable.winterbourne.StreamT;
@@ -16,7 +12,6 @@ import static com.jnape.palatable.lambda.adt.hlist.HList.tuple;
 import static com.jnape.palatable.lambda.functions.builtin.fn1.Constantly.constantly;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.$.$;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.Into.into;
-import static com.jnape.palatable.shoki.api.Natural.one;
 import static com.jnape.palatable.winterbourne.StreamT.streamT;
 
 /**
@@ -34,15 +29,12 @@ public final class DropM<M extends MonadRec<?, M>, A> implements Fn2<NonZero, St
 
     @Override
     public StreamT<M, A> checkedApply(NonZero n, StreamT<M, A> as) {
-        MonadRec<Maybe<Tuple2<Maybe<Unit>, StreamT<M, Unit>>>, M> mUnit = as.pure(UNIT).runStreamT();
-        return streamT(
-                () -> as.runStreamT().fmap(m -> m.fmap(into(
-                        (mHead, tail) -> tuple(nothing(),
-                                               mHead.flatMap(constantly(n.minus(one())))
-                                                    .orElse(n)
-                                                    .match(constantly(tail),
-                                                           nz -> dropM(nz, tail)))))),
-                Pure.of(mUnit));
+        return streamT(() -> as.runStreamT()
+                               .fmap(m -> m.fmap(into((mHead, tail) -> tuple(
+                                       nothing(),
+                                       mHead.discardL(n.dec()).orElse(n)
+                                               .match(constantly(tail), nz -> dropM(nz, tail)))))),
+                       as.pure(UNIT).runStreamT()::pure);
     }
 
     @SuppressWarnings("unchecked")

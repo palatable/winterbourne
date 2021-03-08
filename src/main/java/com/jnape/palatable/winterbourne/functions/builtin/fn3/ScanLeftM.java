@@ -20,15 +20,15 @@ import static com.jnape.palatable.winterbourne.StreamT.streamT;
  * <code>{@link Fn2}&lt;B, A, MonadRec&lt;B, M&gt;&gt;</code>, iteratively accumulate over the {@link StreamT},
  * returning a {@link StreamT} of all of the intermediate accumulator values <code>B</code>. Note that, as the
  * name implies, this function accumulates from left to right, such that with a {@link StreamT} <code>s</code>
- * emitting [1,2,3,4,5], <code>scanLeftM(f, M 0, s)</code> produces a <code>StreamT</code> which will emit <code>0,
- * f(0, 1), f(f(0, 1), 2), f(f(f(0, 1), 2), 3), f(f(f(f(0, 1), 2), 3), 4), f(f(f(f(f(0, 1), 2), 3), 4), 5)</code>.
+ * emitting <code>[1, 2, 3]</code>, <code>scanLeftM(f, M 0, s)</code> produces a {@link StreamT} which will emit
+ * <code>0, f(0, 1), f(f(0, 1), 2), f(f(f(0, 1), 2), 3)</code>.
  *
- * @param <M> The <code>StreamT</code>> effect type
- * @param <A> The <code>StreamT</code>> element type
+ * @param <M> The {@link StreamT} effect type
+ * @param <A> The {@link StreamT} element type
  * @param <B> The accumulation type
  */
-public final class ScanLeftM<M extends MonadRec<?, M>, A, B>
-        implements Fn3<Fn2<B, A, MonadRec<B, M>>, MonadRec<B, M>, StreamT<M, A>, StreamT<M, B>> {
+public final class ScanLeftM<M extends MonadRec<?, M>, A, B> implements
+        Fn3<Fn2<? super B, ? super A, ? extends MonadRec<B, M>>, MonadRec<B, M>, StreamT<M, A>, StreamT<M, B>> {
 
     private static final ScanLeftM<?, ?, ?> INSTANCE = new ScanLeftM<>();
 
@@ -36,7 +36,9 @@ public final class ScanLeftM<M extends MonadRec<?, M>, A, B>
     }
 
     @Override
-    public StreamT<M, B> checkedApply(Fn2<B, A, MonadRec<B, M>> fn, MonadRec<B, M> mb, StreamT<M, A> as) {
+    public StreamT<M, B> checkedApply(Fn2<? super B, ? super A, ? extends MonadRec<B, M>> fn,
+                                      MonadRec<B, M> mb,
+                                      StreamT<M, A> as) {
         return streamT(() -> as.runStreamT().flatMap(m -> m.match(
                 __ -> mb.fmap(b -> just(tuple(just(b), empty(Pure.of(mb))))),
                 into((mHead, tail) -> mHead.match(
@@ -51,17 +53,17 @@ public final class ScanLeftM<M extends MonadRec<?, M>, A, B>
     }
 
     public static <M extends MonadRec<?, M>, A, B> Fn2<MonadRec<B, M>, StreamT<M, A>, StreamT<M, B>> scanLeftM(
-            Fn2<B, A, MonadRec<B, M>> fn) {
+            Fn2<? super B, ? super A, ? extends MonadRec<B, M>> fn) {
         return ScanLeftM.<M, A, B>scanLeftM().apply(fn);
     }
 
     public static <M extends MonadRec<?, M>, A, B> Fn1<StreamT<M, A>, StreamT<M, B>> scanLeftM(
-            Fn2<B, A, MonadRec<B, M>> fn, MonadRec<B, M> mb) {
+            Fn2<? super B, ? super A, ? extends MonadRec<B, M>> fn, MonadRec<B, M> mb) {
         return $(scanLeftM(fn), mb);
     }
 
     public static <M extends MonadRec<?, M>, A, B> StreamT<M, B> scanLeftM(
-            Fn2<B, A, MonadRec<B, M>> fn, MonadRec<B, M> mb, StreamT<M, A> as) {
+            Fn2<? super B, ? super A, ? extends MonadRec<B, M>> fn, MonadRec<B, M> mb, StreamT<M, A> as) {
         return $(scanLeftM(fn, mb), as);
     }
 }

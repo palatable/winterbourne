@@ -1,11 +1,7 @@
 package com.jnape.palatable.winterbourne.functions.builtin.fn2;
 
-import com.jnape.palatable.lambda.adt.Maybe;
-import com.jnape.palatable.lambda.adt.Unit;
-import com.jnape.palatable.lambda.adt.hlist.Tuple2;
 import com.jnape.palatable.lambda.functions.Fn1;
 import com.jnape.palatable.lambda.functions.Fn2;
-import com.jnape.palatable.lambda.functions.specialized.Pure;
 import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.winterbourne.StreamT;
 
@@ -34,11 +30,10 @@ public final class TakeWhileM<M extends MonadRec<?, M>, A>
 
     @Override
     public StreamT<M, A> checkedApply(Fn1<? super A, Boolean> predicate, StreamT<M, A> as) {
-        MonadRec<Maybe<Tuple2<Maybe<Unit>, StreamT<M, Unit>>>, M> mUnit = as.pure(UNIT).runStreamT();
         return streamT(() -> as.runStreamT().fmap(m -> m
                                .filter(t -> t._1().match(constantly(true), predicate))
                                .fmap(t -> t.fmap(takeWhileM(predicate)))),
-                       Pure.of(mUnit));
+                       as.pure(UNIT).runStreamT()::pure);
     }
 
     @SuppressWarnings("unchecked")

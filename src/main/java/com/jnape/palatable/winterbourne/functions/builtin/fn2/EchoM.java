@@ -1,5 +1,8 @@
 package com.jnape.palatable.winterbourne.functions.builtin.fn2;
 
+import com.jnape.palatable.lambda.adt.Maybe;
+import com.jnape.palatable.lambda.adt.Unit;
+import com.jnape.palatable.lambda.adt.hlist.Tuple2;
 import com.jnape.palatable.lambda.functions.Fn1;
 import com.jnape.palatable.lambda.functions.Fn2;
 import com.jnape.palatable.lambda.monad.MonadRec;
@@ -25,7 +28,8 @@ public final class EchoM<M extends MonadRec<?, M>, A> implements Fn2<NonZero, St
 
     @Override
     public StreamT<M, A> checkedApply(NonZero n, StreamT<M, A> as) throws Throwable {
-        return as.flatMap(a -> replicateM(n, as.pure(UNIT).runStreamT().pure(a)));
+        MonadRec<Maybe<Tuple2<Maybe<Unit>, StreamT<M, Unit>>>, M> mUnit = as.pure(UNIT).runStreamT();
+        return as.flatMap(a -> replicateM(n, mUnit.pure(a)));
     }
 
     @SuppressWarnings("unchecked")

@@ -16,7 +16,7 @@ import static com.jnape.palatable.winterbourne.StreamT.streamT;
  * @param <M> the {@link StreamT} effect type
  * @param <A> The {@link StreamT} element type
  */
-public class RepeatM<M extends MonadRec<?, M>, A> implements Fn1<MonadRec<A, M>, StreamT<M, A>> {
+public final class RepeatM<M extends MonadRec<?, M>, A> implements Fn1<MonadRec<A, M>, StreamT<M, A>> {
 
     private static final RepeatM<?, ?> INSTANCE = new RepeatM<>();
 

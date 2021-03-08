@@ -18,7 +18,7 @@ import static com.jnape.palatable.winterbourne.StreamT.unfold;
  *
  * @param <M> the effect type
  */
-public class NaturalsM<M extends MonadRec<?, M>> implements Fn1<Pure<M>, StreamT<M, Natural>> {
+public final class NaturalsM<M extends MonadRec<?, M>> implements Fn1<Pure<M>, StreamT<M, Natural>> {
 
     private static final NaturalsM<?> INSTANCE = new NaturalsM<>();
 

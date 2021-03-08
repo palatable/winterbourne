@@ -1,36 +1,24 @@
 package com.jnape.palatable.winterbourne.functions.builtin.fn3;
 
-import com.jnape.palatable.lambda.functions.Fn1;
 import com.jnape.palatable.lambda.functor.builtin.Identity;
-import com.jnape.palatable.lambda.io.IO;
 import com.jnape.palatable.shoki.api.Natural;
-import com.jnape.palatable.traitor.annotations.TestTraits;
-import com.jnape.palatable.traitor.runners.Traits;
-import com.jnape.palatable.winterbourne.StreamT;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import com.jnape.palatable.winterbourne.testsupport.traits.FiniteStream;
 
 import static com.jnape.palatable.lambda.adt.Maybe.nothing;
 import static com.jnape.palatable.lambda.functor.builtin.Identity.pureIdentity;
-import static com.jnape.palatable.lambda.io.IO.io;
-import static com.jnape.palatable.shoki.api.Natural.*;
+import static com.jnape.palatable.shoki.api.Natural.atLeastOne;
+import static com.jnape.palatable.shoki.api.Natural.natural;
+import static com.jnape.palatable.shoki.api.Natural.zero;
 import static com.jnape.palatable.winterbourne.StreamT.empty;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalsM.naturalsM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.FilterM.filterM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn3.ScanLeftM.scanLeftM;
+import static com.jnape.palatable.winterbourne.testsupport.functions.DivisibleBy.divisibleBy;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.streams;
 import static org.junit.Assert.assertThat;
-import static com.jnape.palatable.winterbourne.testsupport.functions.DivisibleBy.divisibleBy;
 
-@RunWith(Traits.class)
 public class ScanLeftMTest {
-
-    @TestTraits({FiniteStream.class})
-    public Fn1<StreamT<IO<?>,Object>,StreamT<IO<?>,Object>> testSubject() {
-        return scanLeftM((o, o2) -> io(o), io(new Object()));
-    }
 
     @Test
     public void buildsUpContinuationOfIncrementalAccumulations() {
@@ -55,7 +43,7 @@ public class ScanLeftMTest {
     }
 
     @Test
-    public void initialAccumulationIsOnlyResultIfEmptyIterable() {
+    public void initialAccumulationIsOnlyResultIfEmpty() {
         assertThat(scanLeftM((Natural n, Natural m) -> new Identity<>(n.plus(m)),
                              new Identity<>(zero()),
                              empty(pureIdentity())),

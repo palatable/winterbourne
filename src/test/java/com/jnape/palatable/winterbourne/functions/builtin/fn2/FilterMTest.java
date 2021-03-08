@@ -1,38 +1,54 @@
 package com.jnape.palatable.winterbourne.functions.builtin.fn2;
 
-import com.jnape.palatable.lambda.functions.Fn1;
-import com.jnape.palatable.lambda.io.IO;
-import com.jnape.palatable.traitor.annotations.TestTraits;
-import com.jnape.palatable.traitor.runners.Traits;
+import com.jnape.palatable.lambda.functor.builtin.Identity;
 import com.jnape.palatable.winterbourne.StreamT;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import com.jnape.palatable.winterbourne.testsupport.traits.FiniteStream;
 
 import static com.jnape.palatable.lambda.adt.Maybe.just;
 import static com.jnape.palatable.lambda.adt.Maybe.nothing;
 import static com.jnape.palatable.lambda.functions.builtin.fn1.Constantly.constantly;
 import static com.jnape.palatable.lambda.functor.builtin.Identity.pureIdentity;
-import static com.jnape.palatable.shoki.api.Natural.*;
+import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
+import static com.jnape.palatable.winterbourne.StreamT.empty;
+import static com.jnape.palatable.winterbourne.StreamT.streamT;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.FilterM.filterM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalsM.naturalsM;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.streams;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static com.jnape.palatable.winterbourne.testsupport.functions.DivisibleBy.divisibleBy;
 
-@RunWith(Traits.class)
 public class FilterMTest {
 
-    @TestTraits({FiniteStream.class})
-    public Fn1<StreamT<IO<?>,Object>, StreamT<IO<?>,Object>> testSubject() {
-        return filterM(constantly(true));
+    @Test
+    public void filterEmpty() {
+        assertThat(filterM(constantly(true), empty(pureIdentity())), streams());
+        assertThat(filterM(constantly(false), empty(pureIdentity())), streams());
     }
 
     @Test
-    public void filterIntroducesSkips() {
-        assertThat(filterM(divisibleBy(atLeastOne(2)),
-                           takeM(atLeastOne(5), naturalsM(pureIdentity()))),
-                   streams(just(zero()), nothing(), natural(2), nothing(), natural(4)));
+    public void elisionsArePreserved() {
+        assertThat(filterM(constantly(true), streamT(new Identity<>(strictQueue(nothing(), nothing(), nothing())))),
+                   streams(nothing(), nothing(), nothing()));
+
+        assertThat(filterM(constantly(false), streamT(new Identity<>(strictQueue(nothing(), nothing(), nothing())))),
+                   streams(nothing(), nothing(), nothing()));
+    }
+
+    @Test
+    public void filterReplacesMatchesWithElisions() {
+        StreamT<Identity<?>, Integer> ints = streamT(new Identity<>(strictQueue(
+                nothing(),
+                just(1),
+                nothing(),
+                just(2),
+                nothing(),
+                just(3))));
+
+        assertThat(filterM(x -> x % 2 == 0, ints),
+                   streams(nothing(), nothing(), nothing(), just(2), nothing(), nothing()));
+
+        assertThat(filterM(constantly(true), ints),
+                   streams(nothing(), just(1), nothing(), just(2), nothing(), just(3)));
+
+        assertThat(filterM(constantly(false), ints),
+                   streams(nothing(), nothing(), nothing(), nothing(), nothing(), nothing()));
     }
 }
