@@ -51,6 +51,8 @@ import static com.jnape.palatable.lambda.monoid.builtin.Join.join;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
 import static com.jnape.palatable.traitor.framework.Subjects.subjects;
 import static com.jnape.palatable.winterbourne.StreamT.empty;
+import static com.jnape.palatable.winterbourne.StreamT.liftStreamT;
+import static com.jnape.palatable.winterbourne.StreamT.pureStreamT;
 import static com.jnape.palatable.winterbourne.StreamT.streamT;
 import static com.jnape.palatable.winterbourne.StreamT.unfold;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.streams;
@@ -441,5 +443,13 @@ public class StreamTTest {
 
         assertEquals(1, flatMapCost.get());
         assertEquals(1, unfoldCost.get());
+    }
+
+    @Test
+    public void pureAndLift() {
+        assertThat(pureStreamT(pureIdentity()).apply(1),
+                   streams(just(1)));
+        assertThat(liftStreamT().apply(new Identity<>(1)),
+                   streams(just(1)));
     }
 }

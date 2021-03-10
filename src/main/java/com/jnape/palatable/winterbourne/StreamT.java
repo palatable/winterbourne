@@ -7,6 +7,7 @@ import com.jnape.palatable.lambda.functions.Fn0;
 import com.jnape.palatable.lambda.functions.Fn1;
 import com.jnape.palatable.lambda.functions.Fn2;
 import com.jnape.palatable.lambda.functions.recursion.RecursiveResult;
+import com.jnape.palatable.lambda.functions.specialized.Lift;
 import com.jnape.palatable.lambda.functions.specialized.Pure;
 import com.jnape.palatable.lambda.functor.Applicative;
 import com.jnape.palatable.lambda.functor.builtin.Lazy;
@@ -242,5 +243,23 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
                                 __ -> terminate(b),
                                 into((rest, rr) -> rr.biMapL(tupler(rest)))))))
                 .coerce();
+    }
+
+    public static <M extends MonadRec<?, M>> Pure<StreamT<M, ?>> pureStreamT(Pure<M> pureM) {
+        return new Pure<>() {
+            @Override
+            public <A> StreamT<M, A> checkedApply(A a) {
+                return streamT(pureM.<Maybe<A>, MonadRec<Maybe<A>, M>>apply(just(a)));
+            }
+        };
+    }
+
+    public static Lift<StreamT<?, ?>> liftStreamT() {
+        return new Lift<>() {
+            @Override
+            public <A, M extends MonadRec<?, M>> StreamT<M, A> checkedApply(MonadRec<A, M> ma) {
+                return streamT(ma.<Maybe<A>>fmap(Maybe::just));
+            }
+        };
     }
 }
