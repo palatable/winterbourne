@@ -11,11 +11,15 @@ import com.jnape.palatable.lambda.functor.builtin.Identity;
 import com.jnape.palatable.lambda.functor.builtin.Writer;
 import com.jnape.palatable.lambda.io.IO;
 import com.jnape.palatable.lambda.monad.MonadRec;
+import com.jnape.palatable.lambda.monad.transformer.builtin.ReaderT;
+import com.jnape.palatable.shoki.api.Natural;
 import com.jnape.palatable.shoki.impl.StrictQueue;
 import com.jnape.palatable.shoki.interop.Shoki;
 import com.jnape.palatable.traitor.annotations.TestTraits;
 import com.jnape.palatable.traitor.framework.Subjects;
 import com.jnape.palatable.traitor.runners.Traits;
+import com.jnape.palatable.winterbourne.functions.builtin.fn1.LastM;
+import com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM;
 import com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,8 +50,12 @@ import static com.jnape.palatable.lambda.functor.builtin.Writer.tell;
 import static com.jnape.palatable.lambda.functor.builtin.Writer.writer;
 import static com.jnape.palatable.lambda.io.IO.io;
 import static com.jnape.palatable.lambda.io.IO.pin;
+import static com.jnape.palatable.lambda.monad.transformer.builtin.ReaderT.readerT;
 import static com.jnape.palatable.lambda.monoid.Monoid.monoid;
 import static com.jnape.palatable.lambda.monoid.builtin.Join.join;
+import static com.jnape.palatable.shoki.api.Natural.abs;
+import static com.jnape.palatable.shoki.api.Natural.atLeastOne;
+import static com.jnape.palatable.shoki.api.Natural.zero;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
 import static com.jnape.palatable.traitor.framework.Subjects.subjects;
 import static com.jnape.palatable.winterbourne.StreamT.empty;
@@ -55,6 +63,8 @@ import static com.jnape.palatable.winterbourne.StreamT.liftStreamT;
 import static com.jnape.palatable.winterbourne.StreamT.pureStreamT;
 import static com.jnape.palatable.winterbourne.StreamT.streamT;
 import static com.jnape.palatable.winterbourne.StreamT.unfold;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.LastM.lastM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.streams;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.whenEmissionsFolded;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.whenFolded;
@@ -451,5 +461,18 @@ public class StreamTTest {
                    streams(just(1)));
         assertThat(liftStreamT().apply(new Identity<>(1)),
                    streams(just(1)));
+    }
+
+    @Test
+    public void unfoldPureMemoization() {
+        StreamT<ReaderT<Natural, Identity<?>, ?>, Natural> sums = unfold(
+                x -> readerT(y -> new Identity<>(just(tuple(just(x.plus(y)), x.inc())))),
+                readerT(constantly(new Identity<>((Natural) zero()))));
+
+        assertEquals(new Identity<>(just(abs(STACK_EXPLODING_NUMBER - 1))),
+                     TakeM.<ReaderT<Natural, Identity<?>, ?>, Natural>takeM(atLeastOne(STACK_EXPLODING_NUMBER))
+                             .<ReaderT<Natural, Identity<?>, Maybe<Natural>>>fmap(lastM())
+                             .<Identity<Maybe<Natural>>>fmap(readerT -> readerT.runReaderT(zero()))
+                             .apply(sums));
     }
 }

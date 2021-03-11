@@ -213,8 +213,12 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
 
     public static <M extends MonadRec<?, M>, A, B> StreamT<M, A> unfold(
             Fn1<? super B, ? extends MonadRec<Maybe<Tuple2<Maybe<A>, B>>, M>> f, MonadRec<B, M> seedM) {
-        return streamT(() -> seedM.flatMap(b -> f.apply(b).fmap(m -> m.fmap(t -> t.fmap(b_ -> unfold(f, seedM.pure(b_)))))),
-                       Pure.of(seedM));
+        Pure<M> pureM = Pure.of(seedM);
+        return Fn1.<MonadRec<B, M>, StreamT<M, A>>withSelf((g, mb) -> streamT(
+                () -> mb.flatMap(b -> f.apply(b)
+                        .fmap(m -> m.fmap(t -> t.fmap(b_ -> g.apply(pureM.<B, MonadRec<B, M>>apply(b_)))))),
+                pureM))
+                .apply(seedM);
     }
 
     public static <M extends MonadRec<?, M>, A> StreamT<M, A> streamT(
