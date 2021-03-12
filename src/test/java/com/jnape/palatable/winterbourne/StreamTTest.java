@@ -18,7 +18,6 @@ import com.jnape.palatable.shoki.interop.Shoki;
 import com.jnape.palatable.traitor.annotations.TestTraits;
 import com.jnape.palatable.traitor.framework.Subjects;
 import com.jnape.palatable.traitor.runners.Traits;
-import com.jnape.palatable.winterbourne.functions.builtin.fn1.LastM;
 import com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM;
 import com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher;
 import org.junit.Test;
@@ -46,7 +45,6 @@ import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.ter
 import static com.jnape.palatable.lambda.functor.builtin.Identity.pureIdentity;
 import static com.jnape.palatable.lambda.functor.builtin.Writer.listen;
 import static com.jnape.palatable.lambda.functor.builtin.Writer.pureWriter;
-import static com.jnape.palatable.lambda.functor.builtin.Writer.tell;
 import static com.jnape.palatable.lambda.functor.builtin.Writer.writer;
 import static com.jnape.palatable.lambda.io.IO.io;
 import static com.jnape.palatable.lambda.io.IO.pin;
@@ -64,7 +62,7 @@ import static com.jnape.palatable.winterbourne.StreamT.pureStreamT;
 import static com.jnape.palatable.winterbourne.StreamT.streamT;
 import static com.jnape.palatable.winterbourne.StreamT.unfold;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.LastM.lastM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GForEachM.gForEachM;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.streams;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.whenEmissionsFolded;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.whenFolded;
@@ -332,20 +330,6 @@ public class StreamTTest {
     }
 
     @Test
-    public void forEachOperatesOnSkippedAndEmittedValues() {
-        assertThat(StreamT.<Writer<String, ?>, Integer>streamT(listen(just(1)), listen(nothing()), listen(just(2)))
-                           .forEach(maybeX -> tell(maybeX.fmap(Object::toString).orElse("_"))),
-                   whenExecutedWith(join(), equalTo("1_2")));
-    }
-
-    @Test
-    public void forEachAwaitOperatesOnlyOnEmittedValues() {
-        assertThat(StreamT.<Writer<String, ?>, Integer>streamT(listen(just(1)), listen(nothing()), listen(just(2)))
-                           .forEachAwait(x -> tell(x.toString())),
-                   whenExecutedWith(join(), equalTo("12")));
-    }
-
-    @Test
     public void awaitAllRunsEntireStream() {
         assertThat(streamT(writer(tuple(just(1), "1")),
                            writer(tuple(nothing(), "_")),
@@ -407,7 +391,7 @@ public class StreamTTest {
         assertEquals(new Identity<>(UNIT), unfold(x -> new Identity<>(
                 x <= STACK_EXPLODING_NUMBER ? just(tuple(just(x), x + 1)) : nothing()), new Identity<>(1))
                 .flatMap(constantly(empty(pureIdentity())))
-                .forEach(constantly(new Identity<>(UNIT))));
+                .awaitAll());
 
         assertThat(unfold(x -> listen(x <= STACK_EXPLODING_NUMBER ? just(tuple(just(x), x + 1)) : nothing()),
                           Writer.<Integer, Integer>listen(1))

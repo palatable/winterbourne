@@ -16,7 +16,6 @@ import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.lambda.monad.transformer.MonadT;
 import com.jnape.palatable.shoki.api.Collection;
 import com.jnape.palatable.shoki.impl.StrictQueue;
-import com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitT;
 
 import static com.jnape.palatable.lambda.adt.Maybe.just;
 import static com.jnape.palatable.lambda.adt.Maybe.nothing;
@@ -27,7 +26,6 @@ import static com.jnape.palatable.lambda.functions.Fn1.withSelf;
 import static com.jnape.palatable.lambda.functions.builtin.fn1.Constantly.constantly;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.$.$;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.Into.into;
-import static com.jnape.palatable.lambda.functions.builtin.fn2.Tupler2.tupler;
 import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.recurse;
 import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.terminate;
 import static com.jnape.palatable.lambda.monad.Monad.join;
@@ -35,6 +33,7 @@ import static com.jnape.palatable.lambda.monad.transformer.builtin.MaybeT.maybeT
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitT.awaitT;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldCutM.gFoldCutM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GForEachM.gForEachM;
 
 public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, StreamT<M, ?>, StreamT<?, ?>> {
 
@@ -182,11 +181,11 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
     }
 
     public <MU extends MonadRec<Unit, M>> MU forEach(Fn1<? super Maybe<A>, MU> action) {
-        return fold((__, a) -> action.apply(a), pureM.apply(UNIT));
+        return gForEachM(StreamT::<MonadRec<Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>, M>>runStreamT, action, this);
     }
 
     public <MU extends MonadRec<Unit, M>> MU forEachAwait(Fn1<? super A, MU> action) {
-        return foldAwait((__, a) -> action.apply(a), pureM.apply(UNIT));
+        return gForEachM(awaitT(), action, this);
     }
 
     public <MU extends MonadRec<Unit, M>> MU awaitAll() {
