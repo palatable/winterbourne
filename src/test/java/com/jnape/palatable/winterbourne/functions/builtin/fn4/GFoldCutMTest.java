@@ -23,6 +23,7 @@ import static com.jnape.palatable.shoki.api.Natural.natural;
 import static com.jnape.palatable.shoki.impl.StrictStack.strictStack;
 import static com.jnape.palatable.winterbourne.StreamT.empty;
 import static com.jnape.palatable.winterbourne.StreamT.streamT;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitT.awaitT;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldCutM.gFoldCutM;
 import static org.junit.Assert.assertEquals;
 
@@ -48,12 +49,12 @@ public class GFoldCutMTest {
                           new Identity<>(just(abs(0))));
 
         Fn1<StreamT<Identity<?>, Natural>, Identity<Natural>> awaitTerminateAsap =
-                gFoldCutM(awaitStreamT(),
+                gFoldCutM(awaitT(),
                           terminateAsap(pureIdentity()),
                           new Identity<>(abs(0)));
 
         Fn1<StreamT<Identity<?>, Natural>, Identity<Natural>> awaitRecurse =
-                gFoldCutM(awaitStreamT(),
+                gFoldCutM(awaitT(),
                           recurseWith(Natural::plus, pureIdentity()),
                           new Identity<>(abs(0)));
 
@@ -85,8 +86,4 @@ public class GFoldCutMTest {
         return StreamT::<MonadRec<Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>, M>>runStreamT;
     }
 
-    private static <M extends MonadRec<?, M>, A>
-    Fn1<StreamT<M, A>, MonadRec<Maybe<Tuple2<A, StreamT<M, A>>>, M>> awaitStreamT() {
-        return StreamT::<MonadRec<Maybe<Tuple2<A, StreamT<M, A>>>, M>>awaitStreamT;
-    }
 }

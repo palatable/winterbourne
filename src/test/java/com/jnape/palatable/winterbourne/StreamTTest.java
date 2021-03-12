@@ -113,19 +113,6 @@ public class StreamTTest {
                    whenRunWith(join(), equalTo(tuple(just(nothing()), "a"))));
     }
 
-    @Test
-    public void awaitStreamTForcesTheMinimumWorkNecessaryToDetermineNextElement() {
-        assertEquals(new Identity<>(Maybe.<Tuple2<Integer, StreamT<Identity<?>, Integer>>>nothing()),
-                     StreamT.<Identity<?>, Integer>streamT(() -> new Identity<>(nothing()), pureIdentity())
-                             .awaitStreamT());
-
-        assertThat(streamT(writer(tuple(nothing(), "a")),
-                           listen(just(1)),
-                           writer(tuple(nothing(), "b")))
-                           .<Writer<String, Maybe<Tuple2<Integer, StreamT<Writer<String, ?>, Integer>>>>>awaitStreamT()
-                           .fmap(m -> m.fmap(Tuple2::_1)),
-                   whenRunWith(join(), equalTo(tuple(just(1), "a"))));
-    }
 
     @Test
     public void liftingResultsInSingleton() {

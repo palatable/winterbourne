@@ -16,6 +16,7 @@ import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.lambda.monad.transformer.MonadT;
 import com.jnape.palatable.shoki.api.Collection;
 import com.jnape.palatable.shoki.impl.StrictQueue;
+import com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitT;
 
 import static com.jnape.palatable.lambda.adt.Maybe.just;
 import static com.jnape.palatable.lambda.adt.Maybe.nothing;
@@ -32,6 +33,7 @@ import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.ter
 import static com.jnape.palatable.lambda.monad.Monad.join;
 import static com.jnape.palatable.lambda.monad.transformer.builtin.MaybeT.maybeT;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitT.awaitT;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldCutM.gFoldCutM;
 
 public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, StreamT<M, ?>, StreamT<?, ?>> {
@@ -62,13 +64,7 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
     }
 
     public <MA extends MonadRec<Maybe<Tuple2<A, StreamT<M, A>>>, M>> MA awaitStreamT() {
-        return pureM.<StreamT<M, A>, MonadRec<StreamT<M, A>, M>>apply(this)
-                .<Maybe<Tuple2<A, StreamT<M, A>>>>trampolineM(as -> as.runStreamT().fmap(maybeStep -> maybeStep.match(
-                        fn0(() -> terminate(nothing())),
-                        t -> t.into((maybeA, as_) -> maybeA.match(
-                                fn0(() -> recurse(as_)),
-                                a -> terminate(just(tuple(a, as_))))))))
-                .coerce();
+        return awaitT(this);
     }
 
     public <N extends MonadRec<?, N>> StreamT<N, A> mapStreamT(NaturalTransformation<M, N> mToN) {
@@ -174,7 +170,7 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
 
     public <B, MB extends MonadRec<B, M>> MB foldCutAwait(
             Fn2<? super B, ? super A, ? extends MonadRec<RecursiveResult<B, B>, M>> fn, MB acc) {
-        return gFoldCutM(StreamT::<MonadRec<Maybe<Tuple2<A, StreamT<M, A>>>, M>>awaitStreamT, fn, acc, this);
+        return gFoldCutM(awaitT(), fn, acc, this);
     }
 
     public <B, MB extends MonadRec<B, M>> MB fold(Fn2<? super B, ? super Maybe<A>, MB> fn, MB acc) {
