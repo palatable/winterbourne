@@ -26,6 +26,7 @@ import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.CycleM.cycleM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalsM.naturalsM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn3.FoldCutM.foldCutM;
 import static com.jnape.palatable.winterbourne.testsupport.functions.ImpureNaturals.writerNaturals;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.streams;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.WriterMatcher.whenExecutedWith;
@@ -38,11 +39,11 @@ public class CycleMTest {
     @Test
     public void cyclesEmpty() {
         assertEquals(new Identity<>(strictQueue(nothing(), nothing(), nothing())),
-                     cycleM(StreamT.<Identity<?>, Unit>empty(pureIdentity()))
-                             .foldCut(curried(into((i, xs) -> x -> new Identity<>(i == 3
-                                                                                  ? terminate(tuple(i, xs))
-                                                                                  : recurse(tuple(i + 1, xs.snoc(x)))))),
-                                      new Identity<>(tuple(0, StrictQueue.<Maybe<Unit>>strictQueue())))
+                     foldCutM(curried(into((i, xs) -> x -> new Identity<>(i == 3
+                                                                          ? terminate(tuple(i, xs))
+                                                                          : recurse(tuple(i + 1, xs.snoc(x)))))),
+                              new Identity<>(tuple(0, StrictQueue.<Maybe<Unit>>strictQueue())),
+                              cycleM(StreamT.<Identity<?>, Unit>empty(pureIdentity())))
                              .fmap(Tuple2::_2));
     }
 

@@ -276,22 +276,6 @@ public class StreamTTest {
     }
 
     @Test
-    public void foldCutOperatesOnSkippedAndEmittedValues() {
-        assertThat(StreamT.<Writer<String, ?>, Integer>streamT(listen(just(1)),
-                                                               listen(nothing()),
-                                                               listen(just(2)),
-                                                               listen(just(3)))
-                           .foldCut(
-                                   (x, maybeY) -> maybeY.match(
-                                           constantly(writer(tuple(recurse(x), "_"))),
-                                           y -> writer(tuple(y == 2 ? RecursiveResult.<Integer, Integer>terminate(x + y)
-                                                                    : RecursiveResult.<Integer, Integer>recurse(x + y),
-                                                             y.toString()))),
-                                   writer(tuple(0, "0"))),
-                   whenRunWith(join(), equalTo(tuple(3, "01_2"))));
-    }
-
-    @Test
     public void foldCutAwaitOperatesOnlyOnEmittedValues() {
         assertThat(StreamT.<Writer<String, ?>, Integer>streamT(listen(just(1)),
                                                                listen(nothing()),

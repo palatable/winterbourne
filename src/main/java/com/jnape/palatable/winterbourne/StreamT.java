@@ -32,6 +32,7 @@ import static com.jnape.palatable.lambda.monad.Monad.join;
 import static com.jnape.palatable.lambda.monad.transformer.builtin.MaybeT.maybeT;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitT.awaitT;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn3.FoldCutM.foldCutM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldCutM.gFoldCutM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GForEachM.gForEachM;
 
@@ -164,7 +165,7 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
 
     public <B, MB extends MonadRec<B, M>> MB foldCut(
             Fn2<? super B, ? super Maybe<A>, ? extends MonadRec<RecursiveResult<B, B>, M>> fn, MB acc) {
-        return gFoldCutM(StreamT::<MonadRec<Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>, M>>runStreamT, fn, acc, this);
+        return foldCutM(fn, acc, this);
     }
 
     public <B, MB extends MonadRec<B, M>> MB foldCutAwait(
@@ -173,7 +174,7 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
     }
 
     public <B, MB extends MonadRec<B, M>> MB fold(Fn2<? super B, ? super Maybe<A>, MB> fn, MB acc) {
-        return foldCut((b, maybeA) -> fn.apply(b, maybeA).fmap(RecursiveResult::recurse), acc);
+        return foldCutM((b, maybeA) -> fn.apply(b, maybeA).fmap(RecursiveResult::recurse), acc, this);
     }
 
     public <B, MB extends MonadRec<B, M>> MB foldAwait(Fn2<? super B, ? super A, MB> fn, MB acc) {
