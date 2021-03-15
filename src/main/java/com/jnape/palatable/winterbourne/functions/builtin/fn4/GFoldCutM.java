@@ -30,12 +30,12 @@ public final class GFoldCutM<M extends MonadRec<?, M>, A, B, X, MB extends Monad
 
     @Override
     public MB checkedApply(Fn1<? super StreamT<M, A>, ? extends MonadRec<Maybe<Tuple2<X, StreamT<M, A>>>, M>> advance,
-                           Fn2<? super B, ? super X, ? extends MonadRec<RecursiveResult<B, B>, M>> fold,
+                           Fn2<? super B, ? super X, ? extends MonadRec<RecursiveResult<B, B>, M>> foldCut,
                            MB acc,
                            StreamT<M, A> streamT) {
         return acc.fmap(tupler(streamT))
                 .trampolineM(into((as, b) -> maybeT(advance.apply(as))
-                        .flatMap(into((a, aas) -> maybeT(fold.apply(b, a).fmap(Maybe::just)).fmap(tupler(aas))))
+                        .flatMap(into((a, aas) -> maybeT(foldCut.apply(b, a).fmap(Maybe::just)).fmap(tupler(aas))))
                         .runMaybeT()
                         .fmap(maybeR -> maybeR.match(
                                 __ -> terminate(b),

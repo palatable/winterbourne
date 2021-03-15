@@ -1,19 +1,14 @@
 package com.jnape.palatable.winterbourne;
 
 import com.jnape.palatable.lambda.adt.Maybe;
-import com.jnape.palatable.lambda.adt.Unit;
 import com.jnape.palatable.lambda.adt.hlist.Tuple2;
 import com.jnape.palatable.lambda.functions.Fn1;
-import com.jnape.palatable.lambda.functions.Fn2;
-import com.jnape.palatable.lambda.functions.recursion.RecursiveResult;
 import com.jnape.palatable.lambda.functor.Functor;
 import com.jnape.palatable.lambda.functor.builtin.Identity;
 import com.jnape.palatable.lambda.functor.builtin.Writer;
 import com.jnape.palatable.lambda.io.IO;
-import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.lambda.monad.transformer.builtin.ReaderT;
 import com.jnape.palatable.shoki.api.Natural;
-import com.jnape.palatable.shoki.impl.StrictQueue;
 import com.jnape.palatable.shoki.interop.Shoki;
 import com.jnape.palatable.traitor.annotations.TestTraits;
 import com.jnape.palatable.traitor.framework.Subjects;
@@ -55,18 +50,19 @@ import static com.jnape.palatable.shoki.api.Natural.abs;
 import static com.jnape.palatable.shoki.api.Natural.atLeastOne;
 import static com.jnape.palatable.shoki.api.Natural.zero;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
+import static com.jnape.palatable.shoki.impl.StrictStack.strictStack;
 import static com.jnape.palatable.traitor.framework.Subjects.subjects;
 import static com.jnape.palatable.winterbourne.StreamT.empty;
 import static com.jnape.palatable.winterbourne.StreamT.liftStreamT;
 import static com.jnape.palatable.winterbourne.StreamT.pureStreamT;
 import static com.jnape.palatable.winterbourne.StreamT.streamT;
 import static com.jnape.palatable.winterbourne.StreamT.unfold;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitAllM.awaitAllM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.LastM.lastM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GForEachM.gForEachM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn3.FoldM.foldM;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.streams;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.whenEmissionsFolded;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.whenFolded;
-import static com.jnape.palatable.winterbourne.testsupport.matchers.WriterMatcher.whenExecutedWith;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.WriterMatcher.whenRunWith;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
@@ -83,18 +79,21 @@ public class StreamTTest {
 
     @TestTraits({FunctorLaws.class, ApplicativeLaws.class, MonadLaws.class, MonadRecLaws.class})
     public Subjects<Equivalence<StreamT<Identity<?>, ?>>> testSubject() {
-        Fn1<? super StreamT<Identity<?>, ?>, Object> inTermsOfSkipsAndEmissions = streamT -> streamT
-                .<StrictQueue<Maybe<?>>, Identity<StrictQueue<Maybe<?>>>>fold(
-                        (as, maybeA) -> new Identity<>(as.snoc(maybeA)),
-                        new Identity<>(strictQueue()))
-                .runIdentity();
+        Fn1<? super StreamT<Identity<?>, ?>, Object> inTermsOfSkipsAndEmissions = streamT -> foldM(
+                (as, maybeA) -> new Identity<>(as.snoc(maybeA)),
+                new Identity<>(strictQueue()),
+                streamT);
         return subjects(equivalence(EXPLICITLY_EMPTY, inTermsOfSkipsAndEmissions),
                         equivalence(IMPLICITLY_EMPTY, inTermsOfSkipsAndEmissions),
                         equivalence(streamT(new Identity<>(strictQueue(just(1)))), inTermsOfSkipsAndEmissions),
-                        equivalence(streamT(new Identity<>(strictQueue(just(1), just(2), just(3)))), inTermsOfSkipsAndEmissions),
-                        equivalence(streamT(new Identity<>(strictQueue(just(1), nothing(), just(3)))), inTermsOfSkipsAndEmissions),
-                        equivalence(streamT(new Identity<>(strictQueue(nothing(), nothing(), nothing()))), inTermsOfSkipsAndEmissions),
-                        equivalence(streamT(new Identity<>(strictQueue(nothing(), nothing(), nothing()))), inTermsOfSkipsAndEmissions));
+                        equivalence(streamT(new Identity<>(strictQueue(just(1), just(2), just(3)))),
+                                    inTermsOfSkipsAndEmissions),
+                        equivalence(streamT(new Identity<>(strictQueue(just(1), nothing(), just(3)))),
+                                    inTermsOfSkipsAndEmissions),
+                        equivalence(streamT(new Identity<>(strictQueue(nothing(), nothing(), nothing()))),
+                                    inTermsOfSkipsAndEmissions),
+                        equivalence(streamT(new Identity<>(strictQueue(nothing(), nothing(), nothing()))),
+                                    inTermsOfSkipsAndEmissions));
     }
 
     @Test
@@ -103,12 +102,12 @@ public class StreamTTest {
                      StreamT.<Identity<?>, Integer>streamT(() -> new Identity<>(nothing()), pureIdentity())
                              .runStreamT());
 
-        assertThat(streamT(writer(tuple(nothing(), "a")),
-                           listen(just(1)),
-                           writer(tuple(nothing(), "b")))
-                           .<Writer<String, Maybe<Tuple2<Maybe<Integer>, StreamT<Writer<String, ?>, Integer>>>>>runStreamT()
-                           .fmap(m -> m.fmap(Tuple2::_1)),
-                   whenRunWith(join(), equalTo(tuple(just(nothing()), "a"))));
+        assertThat(
+                streamT(writer(tuple(nothing(), "a")), listen(just(1)), writer(tuple(nothing(), "b")))
+                        .<Writer<String, Maybe<Tuple2<Maybe<Integer>, StreamT<Writer<String, ?>, Integer>>>>>
+                                runStreamT()
+                        .fmap(m -> m.fmap(Tuple2::_1)),
+                whenRunWith(join(), equalTo(tuple(just(nothing()), "a"))));
     }
 
 
@@ -125,31 +124,31 @@ public class StreamTTest {
                    streams(just(1), nothing(), just(2)));
 
         assertThat(streamT(new Identity<>(strictQueue(just(1))))
-                           .zip(streamT(new Identity<>(just(id())), new Identity<>(nothing()), new Identity<>(just(id())))),
+                           .zip(streamT(new Identity<>(strictStack(just(id()), nothing(), just(id()))))),
                    streams(just(1), nothing(), just(1)));
         assertThat(streamT(new Identity<>(strictQueue(just(1), nothing(), just(2))))
                            .zip(streamT(new Identity<>(just(id())))),
                    streams(just(1), nothing(), just(2)));
         assertThat(streamT(new Identity<>(strictQueue(just(1), nothing(), just(2))))
-                           .zip(streamT(new Identity<>(just(id())), new Identity<>(nothing()), new Identity<>(just(id())))),
+                           .zip(streamT(new Identity<>(strictStack(just(id()), nothing(), just(id()))))),
                    streams(just(1), nothing(), just(1), nothing(), just(2), nothing(), just(2)));
 
         assertThat(streamT(new Identity<>(strictQueue(just(1), nothing(), just(2))))
                            .flatMap(x -> streamT(new Identity<>(just(x)))),
                    streams(just(1), nothing(), just(2)));
         assertThat(streamT(new Identity<>(strictQueue(just(1), nothing(), just(2))))
-                           .flatMap(x -> streamT(new Identity<>(just(x)), new Identity<>(nothing()), new Identity<>(just(x)))),
+                           .flatMap(x -> streamT(new Identity<>(strictStack(just(x), nothing(), just(x))))),
                    streams(just(1), nothing(), just(1), nothing(), just(2), nothing(), just(2)));
 
         assertThat(streamT(new Identity<>(strictQueue(just(1), nothing(), just(2))))
                            .trampolineM(x -> streamT(new Identity<>(just(terminate(x))))),
                    streams(just(1), nothing(), just(2)));
         assertThat(streamT(new Identity<>(strictQueue(just(1), nothing(), just(2))))
-                           .trampolineM(x -> streamT(new Identity<>(just(terminate(x))), new Identity<>(nothing()), new Identity<>(just(terminate(x))))),
+                           .trampolineM(x -> streamT(new Identity<>(strictStack(just(terminate(x)), nothing(), just(terminate(x)))))),
                    streams(just(1), nothing(), just(1), nothing(), just(2), nothing(), just(2)));
         assertThat(streamT(new Identity<>(strictQueue(just(1), nothing(), just(2))))
                            .trampolineM(x -> x < 3
-                                             ? streamT(new Identity<>(just(terminate(x))), new Identity<>(nothing()), new Identity<>(just(recurse(x + 1))))
+                                             ? streamT(new Identity<>(strictStack(just(terminate(x)), nothing(), just(recurse(x + 1)))))
                                              : streamT(new Identity<>(just(terminate(x))))),
                    streams(just(1), nothing(), just(2), nothing(), just(3), nothing(), just(2), nothing(), just(3)));
         assertThat(streamT(new Identity<>(strictQueue(just(1), nothing(), just(2))))
@@ -275,53 +274,6 @@ public class StreamTTest {
                    streamsOneThroughSix);
     }
 
-    @Test
-    public void foldCutAwaitOperatesOnlyOnEmittedValues() {
-        assertThat(StreamT.<Writer<String, ?>, Integer>streamT(listen(just(1)),
-                                                               listen(nothing()),
-                                                               listen(just(2)),
-                                                               listen(just(3)))
-                           .foldCutAwait(
-                                   (x, y) -> writer(tuple(y == 2 ? terminate(x + y) : recurse(x + y), y.toString())),
-                                   writer(tuple(0, "0"))),
-                   whenRunWith(join(), equalTo(tuple(3, "012"))));
-    }
-
-    @Test
-    public void foldOperatesOnSkippedAndEmittedValues() {
-        Fn2<StrictQueue<Maybe<Integer>>, Maybe<Integer>, MonadRec<StrictQueue<Maybe<Integer>>, Identity<?>>> toCollection = (as, maybeA) -> new Identity<>(as.snoc(maybeA));
-        assertEquals(new Identity<>(StrictQueue.<Maybe<Integer>>strictQueue()),
-                     EXPLICITLY_EMPTY.fold(toCollection, new Identity<>(strictQueue())));
-        assertEquals(new Identity<>(StrictQueue.<Maybe<Integer>>strictQueue()), IMPLICITLY_EMPTY.fold(toCollection, new Identity<>(strictQueue())));
-        assertEquals(new Identity<>(strictQueue(just(1), just(2), just(3))),
-                     streamT(new Identity<>(strictQueue(just(1), just(2), just(3)))).fold(toCollection, new Identity<>(strictQueue())));
-        assertEquals(new Identity<>(StrictQueue.<Maybe<Integer>>strictQueue(just(1), nothing(), just(3))),
-                     streamT(new Identity<>(strictQueue(just(1), nothing(), just(3)))).fold(toCollection, new Identity<>(strictQueue())));
-    }
-
-    @Test
-    public void foldAwaitOperatesOnlyOnEmittedValues() {
-        assertEquals(new Identity<>(0), EXPLICITLY_EMPTY.foldAwait((x, y) -> new Identity<>(x + y), new Identity<>(0)));
-        assertEquals(new Identity<>(0), IMPLICITLY_EMPTY.foldAwait((x, y) -> new Identity<>(x + y), new Identity<>(0)));
-        assertEquals(new Identity<>(6),
-                     streamT(new Identity<>(strictQueue(just(1), just(2), just(3))))
-                             .foldAwait((x, y) -> new Identity<>(x + y),
-                                        new Identity<>(0)));
-        assertEquals(new Identity<>(4),
-                     streamT(new Identity<>(strictQueue(just(1), nothing(), just(3))))
-                             .foldAwait((x, y) -> new Identity<>(x + y),
-                                        new Identity<>(0)));
-    }
-
-    @Test
-    public void awaitAllRunsEntireStream() {
-        assertThat(streamT(writer(tuple(just(1), "1")),
-                           writer(tuple(nothing(), "_")),
-                           writer(tuple(nothing(), "2")),
-                           writer(tuple(nothing(), "_")))
-                           .<Writer<String, Unit>>awaitAll(),
-                   whenExecutedWith(join(), equalTo("1_2_")));
-    }
 
     @Test
     public void zipCartesianProductWithObservableEffectsAndSkips() {
@@ -346,36 +298,34 @@ public class StreamTTest {
 
     @Test(timeout = 500)
     public void zipComposesInParallel() {
-        CountDownLatch a = new CountDownLatch(1);
-        CountDownLatch b = new CountDownLatch(1);
-        CountDownLatch c = new CountDownLatch(1);
+        CountDownLatch arrivals = new CountDownLatch(2);
 
         StreamT<IO<?>, Integer> foo = streamT(io(() -> {
-            a.countDown();
-            b.await();
-            c.countDown();
+            arrivals.countDown();
+            arrivals.await();
             return just(1);
         }));
 
         StreamT<IO<?>, Integer> bar = streamT(io(() -> {
-            a.await();
-            b.countDown();
-            c.await();
+            arrivals.countDown();
+            arrivals.await();
             return just(2);
         }));
 
-        assertThat(pin(foo.zip(bar.fmap(y -> x -> tuple(x, y)))
-                               .fold((as, maybeA) -> io(as.snoc(maybeA)), io(strictQueue())),
+        assertThat(pin(foldM((as, maybeA) -> io(as.snoc(maybeA)),
+                             io(strictQueue()),
+                             foo.zip(bar.fmap(y -> x -> tuple(x, y)))),
                        Executors.newFixedThreadPool(2)),
                    yieldsValue(equalTo(strictQueue(just(tuple(1, 2))))));
     }
 
     @Test
     public void flatMapToEmptyStackSafety() {
-        assertEquals(new Identity<>(UNIT), unfold(x -> new Identity<>(
-                x <= STACK_EXPLODING_NUMBER ? just(tuple(just(x), x + 1)) : nothing()), new Identity<>(1))
-                .flatMap(constantly(empty(pureIdentity())))
-                .awaitAll());
+        assertEquals(new Identity<>(UNIT),
+                     awaitAllM(
+                             unfold(x -> new Identity<>(
+                                     x <= STACK_EXPLODING_NUMBER ? just(tuple(just(x), x + 1)) : nothing()), new Identity<>(1))
+                                     .flatMap(constantly(empty(pureIdentity())))));
 
         assertThat(unfold(x -> listen(x <= STACK_EXPLODING_NUMBER ? just(tuple(just(x), x + 1)) : nothing()),
                           Writer.<Integer, Integer>listen(1))

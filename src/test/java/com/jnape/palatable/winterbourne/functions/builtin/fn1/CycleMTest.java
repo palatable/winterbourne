@@ -8,6 +8,7 @@ import com.jnape.palatable.lambda.functor.builtin.Writer;
 import com.jnape.palatable.shoki.api.Natural;
 import com.jnape.palatable.shoki.impl.StrictQueue;
 import com.jnape.palatable.winterbourne.StreamT;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static com.jnape.palatable.lambda.adt.Maybe.nothing;
@@ -23,6 +24,7 @@ import static com.jnape.palatable.shoki.api.Natural.natural;
 import static com.jnape.palatable.shoki.api.Natural.one;
 import static com.jnape.palatable.shoki.api.Natural.zero;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitAllM.awaitAllM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.CycleM.cycleM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalsM.naturalsM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
@@ -57,9 +59,9 @@ public class CycleMTest {
 
     @Test
     public void rerunsTheEffects() {
-        assertThat(takeM(atLeastOne(4), cycleM(takeM(atLeastOne(2), writerNaturals())))
-                           .<Writer<StrictQueue<Natural>, Unit>>awaitAll(),
-                   whenExecutedWith(monoid(StrictQueue::snocAll, strictQueue()),
-                                    equalTo(strictQueue(zero(), one(), zero(), one()))));
+        Assert.<Writer<StrictQueue<Natural>, Unit>>assertThat(
+                awaitAllM(takeM(atLeastOne(4), cycleM(takeM(atLeastOne(2), writerNaturals())))),
+                whenExecutedWith(monoid(StrictQueue::snocAll, strictQueue()),
+                                 equalTo(strictQueue(zero(), one(), zero(), one()))));
     }
 }

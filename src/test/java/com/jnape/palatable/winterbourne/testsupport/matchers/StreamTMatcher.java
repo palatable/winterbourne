@@ -14,6 +14,7 @@ import org.hamcrest.TypeSafeMatcher;
 
 import static com.jnape.palatable.lambda.functor.builtin.Identity.pureIdentity;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn3.FoldM.foldM;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 public final class StreamTMatcher<A, M extends MonadRec<?, M>> extends TypeSafeMatcher<StreamT<M, A>> {
@@ -27,7 +28,9 @@ public final class StreamTMatcher<A, M extends MonadRec<?, M>> extends TypeSafeM
     }
 
     protected boolean matchesSafely(StreamT<M, A> streamT) {
-        return matcher.matches(streamT.fold((as, maybeA) -> pureM.apply(as.snoc(maybeA)), pureM.apply(strictQueue())));
+        return matcher.matches(foldM((as, maybeA) -> pureM.apply(as.snoc(maybeA)),
+                                     pureM.apply(strictQueue()),
+                                     streamT));
     }
 
     public void describeTo(Description description) {
@@ -38,7 +41,10 @@ public final class StreamTMatcher<A, M extends MonadRec<?, M>> extends TypeSafeM
     @Override
     protected void describeMismatchSafely(StreamT<M, A> streamT, Description mismatchDescription) {
         mismatchDescription.appendText("folded StreamT matched: ");
-        matcher.describeMismatch(streamT.fold((as, maybeA) -> pureM.apply(as.snoc(maybeA)), pureM.apply(strictQueue())), mismatchDescription);
+        matcher.describeMismatch(foldM((as, maybeA) -> pureM.apply(as.snoc(maybeA)),
+                                       pureM.apply(strictQueue()),
+                                       streamT),
+                                 mismatchDescription);
     }
 
     public static <A, M extends MonadRec<?, M>, MAS extends MonadRec<StrictQueue<A>, M>> StreamTMatcher<A, M> whenEmissionsFolded(

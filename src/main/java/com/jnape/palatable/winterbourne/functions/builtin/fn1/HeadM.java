@@ -7,7 +7,7 @@ import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.winterbourne.StreamT;
 
 import static com.jnape.palatable.lambda.functions.builtin.fn2.$.$;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitT.awaitT;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitM.awaitM;
 
 /**
  * Retrieve the first emitted element of a {@link StreamT}, wrapped in {@link Maybe} and in the effect <code>M</code>.
@@ -27,7 +27,7 @@ public final class HeadM<M extends MonadRec<?, M>, A, MMA extends MonadRec<Maybe
 
     @Override
     public MMA checkedApply(StreamT<M, A> as) {
-        return awaitT(as).fmap(m -> m.fmap(Tuple2::_1)).coerce();
+        return awaitM(as).fmap(m -> m.fmap(Tuple2::_1)).coerce();
     }
 
     @SuppressWarnings("unchecked")

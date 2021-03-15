@@ -15,12 +15,12 @@ import static com.jnape.palatable.lambda.functions.Fn0.fn0;
 import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.recurse;
 import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.terminate;
 
-public final class AwaitT<M extends MonadRec<?, M>, A, MStep extends MonadRec<Maybe<Tuple2<A, StreamT<M, A>>>, M>>
+public final class AwaitM<M extends MonadRec<?, M>, A, MStep extends MonadRec<Maybe<Tuple2<A, StreamT<M, A>>>, M>>
         implements Fn1<StreamT<M, A>, MStep> {
 
-    private static final AwaitT<?, ?, ?> INSTANCE = new AwaitT<>();
+    private static final AwaitM<?, ?, ?> INSTANCE = new AwaitM<>();
 
-    private AwaitT() {
+    private AwaitM() {
     }
 
     @Override
@@ -37,12 +37,12 @@ public final class AwaitT<M extends MonadRec<?, M>, A, MStep extends MonadRec<Ma
 
     @SuppressWarnings("unchecked")
     public static <M extends MonadRec<?, M>, A, MStep extends MonadRec<Maybe<Tuple2<A, StreamT<M, A>>>, M>>
-    AwaitT<M, A, MStep> awaitT() {
-        return (AwaitT<M, A, MStep>) INSTANCE;
+    AwaitM<M, A, MStep> awaitM() {
+        return (AwaitM<M, A, MStep>) INSTANCE;
     }
 
     public static <M extends MonadRec<?, M>, A, MStep extends MonadRec<Maybe<Tuple2<A, StreamT<M, A>>>, M>>
-    MStep awaitT(StreamT<M, A> streamT) {
-        return AwaitT.<M, A, MStep>awaitT().apply(streamT);
+    MStep awaitM(StreamT<M, A> streamT) {
+        return AwaitM.<M, A, MStep>awaitM().apply(streamT);
     }
 }

@@ -16,24 +16,24 @@ import static com.jnape.palatable.lambda.functor.builtin.Writer.writer;
 import static com.jnape.palatable.lambda.monoid.builtin.Join.join;
 import static com.jnape.palatable.winterbourne.StreamT.empty;
 import static com.jnape.palatable.winterbourne.StreamT.streamT;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitT.awaitT;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitM.awaitM;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.WriterMatcher.whenRunWith;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-public class AwaitTTest {
+public class AwaitMTest {
 
     @Test
     public void forcesTheMinimumWorkNecessaryToDetermineNextElement() {
         assertEquals(new Identity<>(Maybe.<Tuple2<Object, StreamT<Identity<?>, Object>>>nothing()),
-                     awaitT(empty(pureIdentity())));
+                     awaitM(empty(pureIdentity())));
 
         assertEquals(new Identity<>(Maybe.<Tuple2<Object, StreamT<Identity<?>, Object>>>nothing()),
-                     awaitT(streamT(() -> new Identity<>(nothing()), pureIdentity())));
+                     awaitM(streamT(() -> new Identity<>(nothing()), pureIdentity())));
 
         Writer<String, Maybe<Tuple2<Integer, StreamT<Writer<String, ?>, Integer>>>> awaitWriter =
-                awaitT(streamT(writer(tuple(nothing(), "a")),
+                awaitM(streamT(writer(tuple(nothing(), "a")),
                                listen(just(1)),
                                writer(tuple(nothing(), "b"))));
         assertThat(awaitWriter.fmap(m -> m.fmap(Tuple2::_1)),

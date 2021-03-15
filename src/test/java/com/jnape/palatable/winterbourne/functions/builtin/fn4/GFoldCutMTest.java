@@ -11,6 +11,7 @@ import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.lambda.semigroup.Semigroup;
 import com.jnape.palatable.shoki.api.Natural;
 import com.jnape.palatable.winterbourne.StreamT;
+import com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitM;
 import org.junit.Test;
 
 import static com.jnape.palatable.lambda.adt.Maybe.just;
@@ -23,7 +24,7 @@ import static com.jnape.palatable.shoki.api.Natural.natural;
 import static com.jnape.palatable.shoki.impl.StrictStack.strictStack;
 import static com.jnape.palatable.winterbourne.StreamT.empty;
 import static com.jnape.palatable.winterbourne.StreamT.streamT;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitT.awaitT;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitM.awaitM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldCutM.gFoldCutM;
 import static org.junit.Assert.assertEquals;
 
@@ -49,12 +50,12 @@ public class GFoldCutMTest {
                           new Identity<>(just(abs(0))));
 
         Fn1<StreamT<Identity<?>, Natural>, Identity<Natural>> awaitTerminateAsap =
-                gFoldCutM(awaitT(),
+                gFoldCutM(awaitM(),
                           terminateAsap(pureIdentity()),
                           new Identity<>(abs(0)));
 
         Fn1<StreamT<Identity<?>, Natural>, Identity<Natural>> awaitRecurse =
-                gFoldCutM(awaitT(),
+                gFoldCutM(awaitM(),
                           recurseWith(Natural::plus, pureIdentity()),
                           new Identity<>(abs(0)));
 

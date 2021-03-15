@@ -16,6 +16,7 @@ import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.lambda.monad.transformer.MonadT;
 import com.jnape.palatable.shoki.api.Collection;
 import com.jnape.palatable.shoki.impl.StrictQueue;
+import com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitM;
 
 import static com.jnape.palatable.lambda.adt.Maybe.just;
 import static com.jnape.palatable.lambda.adt.Maybe.nothing;
@@ -31,10 +32,14 @@ import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.ter
 import static com.jnape.palatable.lambda.monad.Monad.join;
 import static com.jnape.palatable.lambda.monad.transformer.builtin.MaybeT.maybeT;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitT.awaitT;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitAllM.awaitAllM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitM.awaitM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn2.ForEachM.forEachM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn3.FoldCutM.foldCutM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn3.FoldM.foldM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldCutM.gFoldCutM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GForEachM.gForEachM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn3.GForEachM.gForEachM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldM.gFoldM;
 
 public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, StreamT<M, ?>, StreamT<?, ?>> {
 
@@ -64,7 +69,7 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
     }
 
     public <MA extends MonadRec<Maybe<Tuple2<A, StreamT<M, A>>>, M>> MA awaitStreamT() {
-        return awaitT(this);
+        return awaitM(this);
     }
 
     public <N extends MonadRec<?, N>> StreamT<N, A> mapStreamT(NaturalTransformation<M, N> mToN) {
@@ -170,27 +175,27 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
 
     public <B, MB extends MonadRec<B, M>> MB foldCutAwait(
             Fn2<? super B, ? super A, ? extends MonadRec<RecursiveResult<B, B>, M>> fn, MB acc) {
-        return gFoldCutM(awaitT(), fn, acc, this);
+        return gFoldCutM(awaitM(), fn, acc, this);
     }
 
     public <B, MB extends MonadRec<B, M>> MB fold(Fn2<? super B, ? super Maybe<A>, MB> fn, MB acc) {
-        return foldCutM((b, maybeA) -> fn.apply(b, maybeA).fmap(RecursiveResult::recurse), acc, this);
+        return foldM(fn, acc, this);
     }
 
     public <B, MB extends MonadRec<B, M>> MB foldAwait(Fn2<? super B, ? super A, MB> fn, MB acc) {
-        return foldCutAwait((b, a) -> fn.apply(b, a).fmap(RecursiveResult::recurse), acc);
+        return gFoldM(awaitM(), fn, acc, this);
     }
 
     public <MU extends MonadRec<Unit, M>> MU forEach(Fn1<? super Maybe<A>, MU> action) {
-        return gForEachM(StreamT::<MonadRec<Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>, M>>runStreamT, action, this);
+        return forEachM(action, this);
     }
 
     public <MU extends MonadRec<Unit, M>> MU forEachAwait(Fn1<? super A, MU> action) {
-        return gForEachM(awaitT(), action, this);
+        return gForEachM(awaitM(), action, this);
     }
 
     public <MU extends MonadRec<Unit, M>> MU awaitAll() {
-        return forEachAwait(constantly(pureM.apply(UNIT)));
+        return awaitAllM(this);
     }
 
     public static <M extends MonadRec<?, M>, A> StreamT<M, A> streamT(

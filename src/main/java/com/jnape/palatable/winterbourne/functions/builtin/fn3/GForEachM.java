@@ -1,4 +1,4 @@
-package com.jnape.palatable.winterbourne.functions.builtin.fn4;
+package com.jnape.palatable.winterbourne.functions.builtin.fn3;
 
 import com.jnape.palatable.lambda.adt.Maybe;
 import com.jnape.palatable.lambda.adt.Unit;
@@ -17,7 +17,7 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldCutM.g
 public final class GForEachM<M extends MonadRec<?, M>, A, X, MU extends MonadRec<Unit, M>> implements
         Fn3<
                 Fn1<? super StreamT<M, A>, ? extends MonadRec<Maybe<Tuple2<X, StreamT<M, A>>>, M>>,
-                Fn1<? super X, ? extends MonadRec<Unit, M>>,
+                Fn1<? super X, ? extends MU>,
                 StreamT<M, A>,
                 MU> {
 
@@ -28,7 +28,7 @@ public final class GForEachM<M extends MonadRec<?, M>, A, X, MU extends MonadRec
 
     @Override
     public MU checkedApply(Fn1<? super StreamT<M, A>, ? extends MonadRec<Maybe<Tuple2<X, StreamT<M, A>>>, M>> advance,
-                           Fn1<? super X, ? extends MonadRec<Unit, M>> forEach,
+                           Fn1<? super X, ? extends MU> forEach,
                            StreamT<M, A> streamT) throws Throwable {
         Pure<M> pureM = Pure.of(streamT.pure(UNIT)
                                         .<MonadRec<Maybe<Tuple2<Maybe<Unit>, StreamT<M, Unit>>>, M>>runStreamT());
@@ -44,20 +44,20 @@ public final class GForEachM<M extends MonadRec<?, M>, A, X, MU extends MonadRec
     }
 
     public static <M extends MonadRec<?, M>, A, X, MU extends MonadRec<Unit, M>>
-    Fn2<Fn1<? super X, ? extends MonadRec<Unit, M>>, StreamT<M, A>, MU> gForEachM(
+    Fn2<Fn1<? super X, ? extends MU>, StreamT<M, A>, MU> gForEachM(
             Fn1<? super StreamT<M, A>, ? extends MonadRec<Maybe<Tuple2<X, StreamT<M, A>>>, M>> advance) {
         return GForEachM.<M, A, X, MU>gForEachM().apply(advance);
     }
 
     public static <M extends MonadRec<?, M>, A, X, MU extends MonadRec<Unit, M>> Fn1<StreamT<M, A>, MU> gForEachM(
             Fn1<? super StreamT<M, A>, ? extends MonadRec<Maybe<Tuple2<X, StreamT<M, A>>>, M>> advance,
-            Fn1<? super X, ? extends MonadRec<Unit, M>> forEach) {
+            Fn1<? super X, ? extends MU> forEach) {
         return GForEachM.<M, A, X, MU>gForEachM(advance).apply(forEach);
     }
 
     public static <M extends MonadRec<?, M>, A, X, MU extends MonadRec<Unit, M>> MU gForEachM(
             Fn1<? super StreamT<M, A>, ? extends MonadRec<Maybe<Tuple2<X, StreamT<M, A>>>, M>> advance,
-            Fn1<? super X, ? extends MonadRec<Unit, M>> forEach,
+            Fn1<? super X, ? extends MU> forEach,
             StreamT<M, A> streamT) {
         return GForEachM.<M, A, X, MU>gForEachM(advance, forEach).apply(streamT);
     }
