@@ -16,15 +16,13 @@ import com.jnape.palatable.lambda.monad.MonadRec;
 import com.jnape.palatable.lambda.monad.transformer.MonadT;
 import com.jnape.palatable.shoki.api.Collection;
 import com.jnape.palatable.shoki.impl.StrictQueue;
-import com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitM;
+import com.jnape.palatable.winterbourne.functions.builtin.fn2.UnfoldM;
 
 import static com.jnape.palatable.lambda.adt.Maybe.just;
 import static com.jnape.palatable.lambda.adt.Maybe.nothing;
-import static com.jnape.palatable.lambda.adt.Unit.UNIT;
 import static com.jnape.palatable.lambda.adt.hlist.HList.tuple;
 import static com.jnape.palatable.lambda.functions.Fn0.fn0;
 import static com.jnape.palatable.lambda.functions.Fn1.withSelf;
-import static com.jnape.palatable.lambda.functions.builtin.fn1.Constantly.constantly;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.$.$;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.Into.into;
 import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.recurse;
@@ -35,10 +33,11 @@ import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitAllM.awaitAllM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitM.awaitM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.ForEachM.forEachM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn2.UnfoldM.unfoldM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn3.FoldCutM.foldCutM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn3.FoldM.foldM;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldCutM.gFoldCutM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn3.GForEachM.gForEachM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldCutM.gFoldCutM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldM.gFoldM;
 
 public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, StreamT<M, ?>, StreamT<?, ?>> {
@@ -215,19 +214,14 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
 
     public static <M extends MonadRec<?, M>, A, B> StreamT<M, A> unfold(
             Fn1<? super B, ? extends MonadRec<Maybe<Tuple2<Maybe<A>, B>>, M>> f, MonadRec<B, M> seedM) {
-        Pure<M> pureM = Pure.of(seedM);
-        return Fn1.<MonadRec<B, M>, StreamT<M, A>>withSelf((g, mb) -> streamT(
-                () -> mb.flatMap(b -> f.apply(b)
-                        .fmap(m -> m.fmap(t -> t.fmap(b_ -> g.apply(pureM.<B, MonadRec<B, M>>apply(b_)))))),
-                pureM))
-                .apply(seedM);
+        return unfoldM(f, seedM);
     }
 
     public static <M extends MonadRec<?, M>, A> StreamT<M, A> streamT(
             Collection<?, ? extends MonadRec<Maybe<A>, M>> mas, Pure<M> pureM) {
-        return StreamT.<M, A, Collection<?, ? extends MonadRec<Maybe<A>, M>>>unfold(
+        return UnfoldM.<M, A, Collection<?, ? extends MonadRec<Maybe<A>, M>>>unfoldM(
                 more -> more.head().match(
-                        constantly(pureM.apply(Maybe.<Tuple2<Maybe<A>, Collection<?, ? extends MonadRec<Maybe<A>, M>>>>nothing())),
+                        __ -> pureM.apply(nothing()),
                         ma -> ma.fmap(a -> just(tuple(a, more.tail())))),
                 pureM.apply(mas));
     }

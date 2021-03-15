@@ -8,7 +8,6 @@ import com.jnape.palatable.lambda.functions.Fn1;
 import com.jnape.palatable.lambda.functions.Fn2;
 import com.jnape.palatable.lambda.functions.builtin.fn2.MagnetizeBy;
 import com.jnape.palatable.lambda.monad.MonadRec;
-import com.jnape.palatable.shoki.api.EquivalenceRelation;
 import com.jnape.palatable.shoki.impl.StrictQueue;
 import com.jnape.palatable.winterbourne.StreamT;
 
@@ -22,8 +21,7 @@ import static com.jnape.palatable.lambda.functions.builtin.fn2.Into.into;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.Into3.into3;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
 import static com.jnape.palatable.winterbourne.StreamT.empty;
-import static com.jnape.palatable.winterbourne.StreamT.unfold;
-import static com.jnape.palatable.winterbourne.functions.builtin.fn2.ZipM.zipM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn2.UnfoldM.unfoldM;
 
 /**
  * Given a binary predicate and an <code>{@link StreamT}&lt;M, A&gt;</code>, return an <code>{@link StreamT}&lt;M,
@@ -45,7 +43,7 @@ public final class MagnetizeByM<M extends MonadRec<?, M>, A>
     @Override
     public StreamT<M, StrictQueue<A>> checkedApply(Fn2<? super A, ? super A, Boolean> predicate, StreamT<M, A> as) {
         MonadRec<Maybe<Tuple2<Maybe<Unit>, StreamT<M, Unit>>>, M> mUnit = as.pure(UNIT).runStreamT();
-        return unfold(into3((pred, queued, rest) -> rest.runStreamT().fmap(maybeMore -> maybeMore.match(
+        return unfoldM(into3((pred, queued, rest) -> rest.runStreamT().fmap(maybeMore -> maybeMore.match(
                 __ -> queued.isEmpty()
                       ? nothing()
                       : just(tuple(just(queued), tuple(constantly(false), strictQueue(), empty(mUnit::pure)))),

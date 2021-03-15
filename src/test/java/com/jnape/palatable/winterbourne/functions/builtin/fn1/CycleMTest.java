@@ -29,7 +29,7 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn1.CycleM.cycl
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalsM.naturalsM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn3.FoldCutM.foldCutM;
-import static com.jnape.palatable.winterbourne.testsupport.functions.ImpureNaturals.writerNaturals;
+import static com.jnape.palatable.winterbourne.testsupport.Naturals.writerNaturals;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.streams;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.WriterMatcher.whenExecutedWith;
 import static org.hamcrest.core.IsEqual.equalTo;

@@ -14,7 +14,7 @@ import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.NaturalsM.naturalsM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.EchoM.echoM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.TakeM.takeM;
-import static com.jnape.palatable.winterbourne.testsupport.functions.ImpureNaturals.writerNaturals;
+import static com.jnape.palatable.winterbourne.testsupport.Naturals.writerNaturals;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.streams;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.whenFolded;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.WriterMatcher.whenRunWith;

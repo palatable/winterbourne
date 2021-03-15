@@ -10,7 +10,7 @@ import static com.jnape.palatable.lambda.adt.Maybe.just;
 import static com.jnape.palatable.lambda.adt.hlist.HList.tuple;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.$.$;
 import static com.jnape.palatable.shoki.api.Natural.zero;
-import static com.jnape.palatable.winterbourne.StreamT.unfold;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn2.UnfoldM.unfoldM;
 
 /**
  * Given a {@link Pure}, produce a <code>{@link StreamT}&lt;M, Natural&gt;</code> starting with {@link Natural#zero()}
@@ -27,8 +27,8 @@ public final class NaturalsM<M extends MonadRec<?, M>> implements Fn1<Pure<M>, S
 
     @Override
     public StreamT<M, Natural> checkedApply(Pure<M> pureM) {
-        return unfold(n -> pureM.apply(just(tuple(just(n), n.inc()))),
-                      pureM.<Natural, MonadRec<Natural, M>>apply(zero()));
+        return unfoldM(n -> pureM.apply(just(tuple(just(n), n.inc()))),
+                       pureM.<Natural, MonadRec<Natural, M>>apply(zero()));
     }
 
     @SuppressWarnings("unchecked")

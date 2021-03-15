@@ -56,9 +56,9 @@ import static com.jnape.palatable.winterbourne.StreamT.empty;
 import static com.jnape.palatable.winterbourne.StreamT.liftStreamT;
 import static com.jnape.palatable.winterbourne.StreamT.pureStreamT;
 import static com.jnape.palatable.winterbourne.StreamT.streamT;
-import static com.jnape.palatable.winterbourne.StreamT.unfold;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitAllM.awaitAllM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.LastM.lastM;
+import static com.jnape.palatable.winterbourne.functions.builtin.fn2.UnfoldM.unfoldM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn3.FoldM.foldM;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.streams;
 import static com.jnape.palatable.winterbourne.testsupport.matchers.StreamTMatcher.whenEmissionsFolded;
@@ -217,16 +217,6 @@ public class StreamTTest {
     }
 
     @Test
-    public void unfoldEmitsOrSkipsUntilFinished() {
-        assertThat(unfold(x -> new Identity<>(
-                           x > 5 ? nothing()
-                                 : x % 2 == 0
-                                   ? just(tuple(nothing(), x + 1))
-                                   : just(tuple(just(x), x + 1))), new Identity<>(1)),
-                   streams(just(1), nothing(), just(3), nothing(), just(5)));
-    }
-
-    @Test
     public void mapStreamTTransformsTheEffectButPreservesSkipsAndEmits() {
         NaturalTransformation<Identity<?>, Maybe<?>> identityToMaybe = new NaturalTransformation<>() {
             @Override
@@ -323,12 +313,12 @@ public class StreamTTest {
     public void flatMapToEmptyStackSafety() {
         assertEquals(new Identity<>(UNIT),
                      awaitAllM(
-                             unfold(x -> new Identity<>(
+                             unfoldM(x -> new Identity<>(
                                      x <= STACK_EXPLODING_NUMBER ? just(tuple(just(x), x + 1)) : nothing()), new Identity<>(1))
                                      .flatMap(constantly(empty(pureIdentity())))));
 
-        assertThat(unfold(x -> listen(x <= STACK_EXPLODING_NUMBER ? just(tuple(just(x), x + 1)) : nothing()),
-                          Writer.<Integer, Integer>listen(1))
+        assertThat(unfoldM(x -> listen(x <= STACK_EXPLODING_NUMBER ? just(tuple(just(x), x + 1)) : nothing()),
+                           Writer.<Integer, Integer>listen(1))
                            .flatMap(x -> streamT(() -> writer(tuple(nothing(), x)), pureWriter())),
                    whenFolded(whenRunWith(monoid(Integer::sum, 0), equalTo(tuple(
                            Shoki.strictQueue(replicate(STACK_EXPLODING_NUMBER, nothing())),
@@ -341,7 +331,7 @@ public class StreamTTest {
         AtomicInteger flatMapCost = new AtomicInteger(0);
         AtomicInteger unfoldCost  = new AtomicInteger(0);
 
-        StreamT<Identity<?>, Integer> costRecordingImpureStreamT = unfold(x -> {
+        StreamT<Identity<?>, Integer> costRecordingImpureStreamT = unfoldM(x -> {
             unfoldCost.incrementAndGet();
             return new Identity<>(x <= 10 ? just(tuple(just(x), x + 1)) : nothing());
         }, new Identity<>(1))
@@ -370,7 +360,7 @@ public class StreamTTest {
 
     @Test
     public void unfoldPureMemoization() {
-        StreamT<ReaderT<Natural, Identity<?>, ?>, Natural> sums = unfold(
+        StreamT<ReaderT<Natural, Identity<?>, ?>, Natural> sums = unfoldM(
                 x -> readerT(y -> new Identity<>(just(tuple(just(x.plus(y)), x.inc())))),
                 readerT(constantly(new Identity<>((Natural) zero()))));
 
