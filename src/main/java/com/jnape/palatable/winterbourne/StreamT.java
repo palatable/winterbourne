@@ -84,11 +84,11 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
     public StreamT<M, A> concat(StreamT<M, A> other) {
         return new StreamT<>(pureM, spine.flatMap(step -> step.match(
                 emission -> {
-                    MonadRec<Step<A, StreamT<M, A>>, M> apply = pureM.apply(emitted(emission.head(), emission.tail().concat(other)));
+                    MonadRec<Step<A, StreamT<M, A>>, M> apply = pureM.apply(emission.fmap(tail -> tail.concat(other)));
                     return safeT(apply);
                 },
                 elision -> {
-                    MonadRec<Step<A, StreamT<M, A>>, M> apply = pureM.apply(elided(elision.tail().concat(other)));
+                    MonadRec<Step<A, StreamT<M, A>>, M> apply = pureM.apply(elision.fmap(tail -> tail.concat(other)));
                     return safeT(apply);
                 },
                 exhausted -> other.spine)

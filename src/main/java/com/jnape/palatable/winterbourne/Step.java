@@ -2,9 +2,11 @@ package com.jnape.palatable.winterbourne;
 
 import com.jnape.palatable.lambda.adt.coproduct.CoProduct3;
 import com.jnape.palatable.lambda.functions.Fn1;
+import com.jnape.palatable.lambda.functor.Functor;
 
-public abstract class Step<Head, Tail>
-        implements CoProduct3<Step.Emitted<Head, Tail>, Step.Elided<Head, Tail>, Step.Exhausted<Head, Tail>, Step<Head, Tail>> {
+public abstract class Step<Head, Tail> implements
+        CoProduct3<Step.Emitted<Head, Tail>, Step.Elided<Head, Tail>, Step.Exhausted<Head, Tail>, Step<Head, Tail>>,
+        Functor<Tail, Step<Head, ?>> {
 
     private Step() {
     }
@@ -41,6 +43,11 @@ public abstract class Step<Head, Tail>
         }
 
         @Override
+        public <NewTail> Emitted<Head, NewTail> fmap(Fn1<? super Tail, ? extends NewTail> fn) {
+            return emitted(head, fn.apply(tail));
+        }
+
+        @Override
         public <R> R match(Fn1<? super Emitted<Head, Tail>, ? extends R> aFn,
                            Fn1<? super Elided<Head, Tail>, ? extends R> bFn,
                            Fn1<? super Exhausted<Head, Tail>, ? extends R> cFn) {
@@ -60,6 +67,11 @@ public abstract class Step<Head, Tail>
         }
 
         @Override
+        public <NewTail> Elided<Head, NewTail> fmap(Fn1<? super Tail, ? extends NewTail> fn) {
+            return elided(fn.apply(tail));
+        }
+
+        @Override
         public <R> R match(Fn1<? super Emitted<Head, Tail>, ? extends R> aFn,
                            Fn1<? super Elided<Head, Tail>, ? extends R> bFn,
                            Fn1<? super Exhausted<Head, Tail>, ? extends R> cFn) {
@@ -71,6 +83,12 @@ public abstract class Step<Head, Tail>
         private static final Exhausted<?, ?> INSTANCE = new Exhausted<>();
 
         private Exhausted() {
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <NewTail> Exhausted<Head, NewTail> fmap(Fn1<? super Tail, ? extends NewTail> fn) {
+            return (Exhausted<Head, NewTail>) this;
         }
 
         @Override
