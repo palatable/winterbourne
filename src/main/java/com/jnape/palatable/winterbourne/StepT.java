@@ -10,11 +10,11 @@ public abstract class StepT<M extends MonadRec<?, M>, A>
     private StepT() {
     }
 
-    public static <M extends MonadRec<?, M>, A> Emitted<M, A> emission(A value, StreamT<M, A> rest) {
+    public static <M extends MonadRec<?, M>, A> Emitted<M, A> emitted(A value, StreamT<M, A> rest) {
         return new Emitted<>(value, rest);
     }
 
-    public static <M extends MonadRec<?, M>, A> Elided<M, A> elision(StreamT<M, A> rest) {
+    public static <M extends MonadRec<?, M>, A> Elided<M, A> elided(StreamT<M, A> rest) {
         return new Elided<>(rest);
     }
 
