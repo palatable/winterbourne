@@ -10,9 +10,11 @@ import com.jnape.palatable.lambda.functions.recursion.RecursiveResult;
 import com.jnape.palatable.lambda.functions.specialized.Lift;
 import com.jnape.palatable.lambda.functions.specialized.Pure;
 import com.jnape.palatable.lambda.functor.Applicative;
+import com.jnape.palatable.lambda.functor.Functor;
 import com.jnape.palatable.lambda.functor.builtin.Lazy;
 import com.jnape.palatable.lambda.monad.Monad;
 import com.jnape.palatable.lambda.monad.MonadRec;
+import com.jnape.palatable.lambda.monad.SafeT;
 import com.jnape.palatable.lambda.monad.transformer.MonadT;
 import com.jnape.palatable.shoki.api.Collection;
 import com.jnape.palatable.shoki.impl.StrictQueue;
@@ -25,9 +27,12 @@ import static com.jnape.palatable.lambda.functions.Fn0.fn0;
 import static com.jnape.palatable.lambda.functions.Fn1.withSelf;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.$.$;
 import static com.jnape.palatable.lambda.functions.builtin.fn2.Into.into;
+import static com.jnape.palatable.lambda.functions.builtin.fn2.Map.map;
+import static com.jnape.palatable.lambda.functions.builtin.fn3.FoldLeft.foldLeft;
 import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.recurse;
 import static com.jnape.palatable.lambda.functions.recursion.RecursiveResult.terminate;
 import static com.jnape.palatable.lambda.monad.Monad.join;
+import static com.jnape.palatable.lambda.monad.SafeT.safeT;
 import static com.jnape.palatable.lambda.monad.transformer.builtin.MaybeT.maybeT;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
 import static com.jnape.palatable.winterbourne.StepT.elision;
@@ -44,31 +49,20 @@ import static com.jnape.palatable.winterbourne.functions.builtin.fn4.GFoldM.gFol
 
 public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, StreamT<M, ?>, StreamT<?, ?>> {
 
-    private final Pure<M>                                                     pureM;
-    private final StrictQueue<Fn0<? extends MonadRec<Maybe<StepT<M, A>>, M>>> spine;
+    private final Pure<M>                      pureM;
+    private final SafeT<M, Maybe<StepT<M, A>>> spine;
 
-    private StreamT(Pure<M> pureM,
-                    StrictQueue<Fn0<? extends MonadRec<Maybe<StepT<M, A>>, M>>> spine) {
+    private StreamT(Pure<M> pureM, SafeT<M, Maybe<StepT<M, A>>> spine) {
         this.pureM = pureM;
         this.spine = spine;
     }
 
     public <MStep extends MonadRec<Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>, M>> MStep runStreamT() {
-        Fn1<StrictQueue<Fn0<? extends MonadRec<Maybe<StepT<M, A>>, M>>>,
-                MonadRec<RecursiveResult<StrictQueue<Fn0<? extends MonadRec<Maybe<StepT<M, A>>, M>>>,
-                        Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>>, M>> tickLast = q -> q.head().match(
-                fn0(() -> pureM.apply(RecursiveResult.<StrictQueue<Fn0<? extends MonadRec<Maybe<StepT<M, A>>, M>>>,
-                        Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>>terminate(nothing()))),
-                f -> f.apply().fmap(maybeStep -> maybeStep.match(
-                        fn0(() -> recurse(q.tail())),
-                        t -> terminate(just(t.match(
-                                emission -> tuple(just(emission.value()), new StreamT<>(pureM, emission.rest().spine.snocAll(q.tail()))),
-                                elision -> tuple(nothing(), new StreamT<>(pureM, elision.rest().spine.snocAll(q.tail())))))))));
-
-        MonadRec<StrictQueue<Fn0<? extends MonadRec<Maybe<StepT<M, A>>, M>>>, M> spineM = pureM.apply(spine);
-        return spineM
-                .trampolineM(tickLast)
-                .coerce();
+        return spine
+                .<Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>>fmap(maybeStep -> maybeStep.fmap(step -> step.match(
+                        em -> tuple(just(em.value()), em.rest()),
+                        el -> tuple(nothing(), el.rest())
+                ))).runSafeT();
     }
 
     public <MA extends MonadRec<Maybe<Tuple2<A, StreamT<M, A>>>, M>> MA awaitStreamT() {
@@ -81,19 +75,28 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
     }
 
     public StreamT<M, A> cons(MonadRec<Maybe<A>, M> ma) {
-        return new StreamT<>(pureM, spine.cons(() -> ma.fmap(maybeA -> just(maybeA.match(
-                __ -> elision(empty(pureM)),
-                a -> emission(a, empty(pureM)))))));
+        return new StreamT<>(pureM, safeT(ma.fmap(maybeA -> just(maybeA.match(__ -> elision(this), a -> emission(a, this))))));
     }
 
     public StreamT<M, A> snoc(MonadRec<Maybe<A>, M> ma) {
-        return new StreamT<>(pureM, spine.snoc(() -> ma.fmap(maybeA -> just(maybeA.match(
-                __ -> elision(empty(pureM)),
-                a -> emission(a, empty(pureM)))))));
+        return concat(new StreamT<>(Pure.of(ma), safeT(ma.fmap(maybe -> maybe.fmap(a -> emission(a, empty(pureM)))))));
     }
 
     public StreamT<M, A> concat(StreamT<M, A> other) {
-        return new StreamT<>(pureM, spine.snocAll(other.spine));
+        return new StreamT<>(pureM, spine.flatMap(maybeStep -> maybeStep.match(
+                __ -> other.spine,
+                step -> step.match(
+                        emission -> {
+                            MonadRec<Maybe<StepT<M, A>>, M> apply = pureM.apply(just(emission(emission.value(), emission.rest().concat(other))));
+                            return safeT(apply);
+                        },
+                        elision -> {
+                            MonadRec<Maybe<StepT<M, A>>, M> apply = pureM.apply(just(elision(elision.rest().concat(other))));
+                            return safeT(apply);
+                        }
+                )
+        )));
+
     }
 
     @Override
@@ -103,7 +106,8 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
 
     @Override
     public <B> StreamT<M, B> pure(B b) {
-        return new StreamT<>(pureM, strictQueue(() -> pureM.apply(just(emission(b, empty(pureM))))));
+        MonadRec<Maybe<StepT<M, B>>, M> apply = pureM.apply(just(emission(b, empty(pureM))));
+        return new StreamT<>(pureM, safeT(apply));
     }
 
     @Override
@@ -172,7 +176,7 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
     @Override
     public <B, N extends MonadRec<?, N>> StreamT<N, B> lift(MonadRec<B, N> nb) {
         Pure<N> pureN = Pure.of(nb);
-        return new StreamT<>(pureN, strictQueue(() -> nb.fmap(b -> just(emission(b, empty(pureN))))));
+        return new StreamT<>(pureN, safeT(nb.fmap(b -> just(emission(b, empty(pureN))))));
     }
 
     public <B, MB extends MonadRec<B, M>> MB foldCut(
@@ -207,14 +211,15 @@ public final class StreamT<M extends MonadRec<?, M>, A> implements MonadT<M, A, 
 
     public static <M extends MonadRec<?, M>, A> StreamT<M, A> streamT(
             Fn0<? extends MonadRec<Maybe<Tuple2<Maybe<A>, StreamT<M, A>>>, M>> thunk, Pure<M> pureM) {
-        return new StreamT<>(pureM, strictQueue(thunk.fmap(m -> m.fmap(maybe -> maybe.fmap(t -> t._1().match(
+        return new StreamT<>(pureM, safeT(thunk.fmap(m -> m.fmap(maybe -> maybe.fmap(t -> t._1().match(
                 __ -> elision(t._2()),
                 a -> emission(a, t._2())
-        ))))));
+        )))).apply()));
     }
 
     public static <M extends MonadRec<?, M>, A> StreamT<M, A> empty(Pure<M> pureN) {
-        return new StreamT<>(pureN, strictQueue());
+        MonadRec<Maybe<StepT<M, A>>, M> apply = pureN.apply(nothing());
+        return new StreamT<>(pureN, safeT(apply));
     }
 
     public static <M extends MonadRec<?, M>, A> StreamT<M, A> streamT(
