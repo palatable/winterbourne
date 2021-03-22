@@ -52,10 +52,14 @@ import static com.jnape.palatable.shoki.api.Natural.zero;
 import static com.jnape.palatable.shoki.impl.StrictQueue.strictQueue;
 import static com.jnape.palatable.shoki.impl.StrictStack.strictStack;
 import static com.jnape.palatable.traitor.framework.Subjects.subjects;
+import static com.jnape.palatable.winterbourne.Eval.value;
+import static com.jnape.palatable.winterbourne.Step.emitted;
+import static com.jnape.palatable.winterbourne.Step.exhausted;
 import static com.jnape.palatable.winterbourne.StreamT.empty;
 import static com.jnape.palatable.winterbourne.StreamT.liftStreamT;
 import static com.jnape.palatable.winterbourne.StreamT.pureStreamT;
 import static com.jnape.palatable.winterbourne.StreamT.streamT;
+import static com.jnape.palatable.winterbourne.StreamT.streamT0;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.AwaitAllM.awaitAllM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn1.LastM.lastM;
 import static com.jnape.palatable.winterbourne.functions.builtin.fn2.UnfoldM.unfoldM;
@@ -96,11 +100,17 @@ public class StreamTTest {
                                     inTermsOfSkipsAndEmissions));
     }
 
-    /*
+    @Test
+    public void wut() {
+        StreamT<Identity<?>, Integer> streamT = streamT(new Identity<>(strictStack(just(1), just(2), just(3), just(4))));
+        System.out.println(streamT);
+        System.out.println(streamT.flatMap(x -> streamT0(new Identity<>(emitted(x, value(empty(pureIdentity())))))));
+    }
+
     @Test
     public void runStreamTForcesTheMinimumWorkNecessaryToEmitOrSkipNextElement() {
         assertEquals(new Identity<>(Maybe.<Tuple2<Maybe<Integer>, StreamT<Identity<?>, Integer>>>nothing()),
-                     StreamT.<Identity<?>, Integer>streamT(() -> new Identity<>(nothing()), pureIdentity())
+                     StreamT.<Identity<?>, Integer>streamT0(new Identity<>(exhausted()))
                              .runStreamT());
 
         assertThat(
@@ -117,6 +127,7 @@ public class StreamTTest {
         assertThat(empty(pureWriter()).lift(new Identity<>(0)),
                    streams(just(0)));
     }
+    /*
 
     @Test
     public void skipsArePreserved() {

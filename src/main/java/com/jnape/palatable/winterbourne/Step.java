@@ -2,6 +2,7 @@ package com.jnape.palatable.winterbourne;
 
 import com.jnape.palatable.lambda.adt.coproduct.CoProduct3;
 import com.jnape.palatable.lambda.functions.Fn1;
+import com.jnape.palatable.lambda.functor.Applicative;
 import com.jnape.palatable.lambda.functor.Functor;
 
 public abstract class Step<Head, Tail> implements
@@ -10,6 +11,9 @@ public abstract class Step<Head, Tail> implements
 
     private Step() {
     }
+
+    @Override
+    public abstract <NewTail> Step<Head, NewTail> fmap(Fn1<? super Tail, ? extends NewTail> fn);
 
     public static <Head, Tail> Emitted<Head, Tail> emitted(Head head, Tail tail) {
         return new Emitted<>(head, tail);
@@ -53,6 +57,14 @@ public abstract class Step<Head, Tail> implements
                            Fn1<? super Exhausted<Head, Tail>, ? extends R> cFn) {
             return aFn.apply(this);
         }
+
+        @Override
+        public String toString() {
+            return "Emitted{" +
+                    "head=" + head +
+                    ", tail=" + tail +
+                    '}';
+        }
     }
 
     public static final class Elided<Head, Tail> extends Step<Head, Tail> {
@@ -77,6 +89,13 @@ public abstract class Step<Head, Tail> implements
                            Fn1<? super Exhausted<Head, Tail>, ? extends R> cFn) {
             return bFn.apply(this);
         }
+
+        @Override
+        public String toString() {
+            return "Elided{" +
+                    "tail=" + tail +
+                    '}';
+        }
     }
 
     public static final class Exhausted<Head, Tail> extends Step<Head, Tail> {
@@ -96,6 +115,11 @@ public abstract class Step<Head, Tail> implements
                            Fn1<? super Elided<Head, Tail>, ? extends R> bFn,
                            Fn1<? super Exhausted<Head, Tail>, ? extends R> cFn) {
             return cFn.apply(this);
+        }
+
+        @Override
+        public String toString() {
+            return "Exhausted{}";
         }
     }
 }
